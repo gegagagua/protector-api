@@ -21,6 +21,7 @@ class ProfileController extends Controller
     #[OA\Get(
         path: "/api/client/profile",
         summary: "Get client profile",
+        description: "Returns authenticated client profile, payment methods, and verification documents.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Profile data")]
@@ -38,6 +39,7 @@ class ProfileController extends Controller
     #[OA\Put(
         path: "/api/client/profile",
         summary: "Update client profile",
+        description: "Updates account details such as name, phone, date of birth, sex, and preferences.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Profile updated")]
@@ -75,6 +77,7 @@ class ProfileController extends Controller
     #[OA\Post(
         path: "/api/client/verification/upload",
         summary: "Upload verification documents",
+        description: "Uploads selfie and ID document and switches verification status to pending review.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
@@ -134,6 +137,14 @@ class ProfileController extends Controller
         ]);
     }
 
+    #[OA\Put(
+        path: "/api/client/notification-preferences",
+        summary: "Update notification preferences",
+        description: "Updates notification settings for text, voice, and push channels.",
+        tags: ["Client Profile"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Notification preferences updated")]
+    )]
     public function updateNotificationPreferences(Request $request): JsonResponse
     {
         $client = $request->user();
@@ -159,6 +170,14 @@ class ProfileController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/client/verification/status",
+        summary: "Get verification status",
+        description: "Returns current KYC status with rejection reason and document upload flag.",
+        tags: ["Client Profile"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Verification status")]
+    )]
     public function verificationStatus(Request $request): JsonResponse
     {
         $client = $request->user();

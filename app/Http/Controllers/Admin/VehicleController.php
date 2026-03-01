@@ -13,6 +13,7 @@ class VehicleController extends Controller
     #[OA\Get(
         path: "/api/admin/vehicles",
         summary: "Get all vehicles",
+        description: "Returns all vehicles with availability and usage metadata.",
         tags: ["Admin Vehicles"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Vehicles list")]
@@ -30,6 +31,7 @@ class VehicleController extends Controller
     #[OA\Post(
         path: "/api/admin/vehicles",
         summary: "Create vehicle",
+        description: "Creates a vehicle record that can be assigned to bookings.",
         tags: ["Admin Vehicles"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 201, description: "Vehicle created")]

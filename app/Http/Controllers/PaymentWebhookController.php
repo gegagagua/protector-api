@@ -8,6 +8,7 @@ use App\Services\Payments\PaymentGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
 class PaymentWebhookController extends Controller
 {
@@ -15,6 +16,16 @@ class PaymentWebhookController extends Controller
     {
     }
 
+    #[OA\Post(
+        path: "/api/payments/webhook",
+        summary: "Handle payment webhook",
+        description: "Processes payment provider webhook events with idempotency protection.",
+        tags: ["Payments"],
+        responses: [
+            new OA\Response(response: 200, description: "Webhook processed"),
+            new OA\Response(response: 400, description: "Invalid webhook signature")
+        ]
+    )]
     public function handle(Request $request): JsonResponse
     {
         $payload = $request->all();

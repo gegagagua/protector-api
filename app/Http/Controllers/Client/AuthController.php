@@ -22,6 +22,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: "/api/client/send-otp",
         summary: "Send OTP code to client phone",
+        description: "Issues and sends OTP code for client registration/login with cooldown and throttling.",
         tags: ["Client Auth"],
         requestBody: new OA\RequestBody(
             required: true,
@@ -81,8 +82,61 @@ class AuthController extends Controller
     }
 
     #[OA\Post(
+        path: "/api/client/signup/send-otp",
+        summary: "Send signup OTP",
+        description: "Sends OTP code for new client registration using phone number.",
+        tags: ["Client Auth"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["phone"],
+                properties: [
+                    new OA\Property(property: "phone", type: "string", example: "+995555123456")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "OTP sent"),
+            new OA\Response(response: 429, description: "Cooldown active")
+        ]
+    )]
+    public function sendSignupOtp(Request $request): JsonResponse
+    {
+        $request->merge(['type' => 'registration']);
+
+        return $this->sendOtp($request);
+    }
+
+    #[OA\Post(
+        path: "/api/client/signin/send-otp",
+        summary: "Send signin OTP",
+        description: "Sends OTP code for existing client login.",
+        tags: ["Client Auth"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["phone"],
+                properties: [
+                    new OA\Property(property: "phone", type: "string", example: "+995555123456")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "OTP sent"),
+            new OA\Response(response: 429, description: "Cooldown active")
+        ]
+    )]
+    public function sendSigninOtp(Request $request): JsonResponse
+    {
+        $request->merge(['type' => 'login']);
+
+        return $this->sendOtp($request);
+    }
+
+    #[OA\Post(
         path: "/api/client/verify-otp",
         summary: "Verify OTP and authenticate client",
+        description: "Validates OTP, creates new client if needed, and returns sanctum access token.",
         tags: ["Client Auth"],
         requestBody: new OA\RequestBody(
             required: true,
@@ -188,8 +242,61 @@ class AuthController extends Controller
     }
 
     #[OA\Post(
+        path: "/api/client/signup",
+        summary: "Signup client",
+        description: "Completes client registration by verifying OTP and requiring first and last name.",
+        tags: ["Client Auth"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["phone", "code", "first_name", "last_name"],
+                properties: [
+                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
+                    new OA\Property(property: "code", type: "string", example: "123456"),
+                    new OA\Property(property: "first_name", type: "string", example: "Giorgi"),
+                    new OA\Property(property: "last_name", type: "string", example: "Gelashvili")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Signup successful"),
+            new OA\Response(response: 422, description: "Validation/OTP failed")
+        ]
+    )]
+    public function signup(Request $request): JsonResponse
+    {
+        return $this->verifyOtp($request);
+    }
+
+    #[OA\Post(
+        path: "/api/client/signin",
+        summary: "Signin client",
+        description: "Completes client login by verifying OTP for an existing account.",
+        tags: ["Client Auth"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["phone", "code"],
+                properties: [
+                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
+                    new OA\Property(property: "code", type: "string", example: "123456")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Signin successful"),
+            new OA\Response(response: 422, description: "Validation/OTP failed")
+        ]
+    )]
+    public function signin(Request $request): JsonResponse
+    {
+        return $this->verifyOtp($request);
+    }
+
+    #[OA\Post(
         path: "/api/client/logout",
         summary: "Logout client",
+        description: "Revokes current access token for authenticated client session.",
         tags: ["Client Auth"],
         security: [["sanctum" => []]],
         responses: [

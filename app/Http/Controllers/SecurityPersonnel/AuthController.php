@@ -15,6 +15,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: "/api/security/login",
         summary: "Login security personnel",
+        description: "Authenticates security personnel with username/password and returns token.",
         tags: ["Security Personnel Auth"],
         requestBody: new OA\RequestBody(
             required: true,
@@ -61,6 +62,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: "/api/security/logout",
         summary: "Logout security personnel",
+        description: "Revokes current security personnel access token.",
         tags: ["Security Personnel Auth"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Logged out")]

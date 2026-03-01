@@ -13,6 +13,7 @@ class PaymentController extends Controller
     #[OA\Get(
         path: "/api/admin/payments",
         summary: "Get all payments",
+        description: "Returns paginated payment records with client and booking references.",
         tags: ["Admin Payments"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Payments list")]

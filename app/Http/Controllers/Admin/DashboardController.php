@@ -17,6 +17,7 @@ class DashboardController extends Controller
     #[OA\Get(
         path: "/api/admin/dashboard",
         summary: "Get dashboard statistics",
+        description: "Returns admin dashboard KPIs for bookings, teams, clients, and revenue.",
         tags: ["Admin Dashboard"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Dashboard data")]

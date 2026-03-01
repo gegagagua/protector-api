@@ -13,6 +13,7 @@ class OrderController extends Controller
     #[OA\Get(
         path: "/api/security/orders",
         summary: "Get active orders for security personnel",
+        description: "Returns active bookings assigned to authenticated security personnel team.",
         tags: ["Security Personnel Orders"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Orders list")]
@@ -41,6 +42,14 @@ class OrderController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/security/orders/history",
+        summary: "Get completed order history",
+        description: "Returns completed and cancelled orders assigned to security team.",
+        tags: ["Security Personnel Orders"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Order history list")]
+    )]
     public function history(Request $request): JsonResponse
     {
         $personnel = $request->user();
@@ -68,6 +77,7 @@ class OrderController extends Controller
     #[OA\Get(
         path: "/api/security/orders/{id}",
         summary: "Get order details",
+        description: "Returns details of a specific assigned order including chat and latest location.",
         tags: ["Security Personnel Orders"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Order details")]

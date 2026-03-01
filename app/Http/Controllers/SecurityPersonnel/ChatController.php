@@ -17,6 +17,7 @@ class ChatController extends Controller
     #[OA\Get(
         path: "/api/security/orders/{id}/messages",
         summary: "Get messages for order",
+        description: "Returns chat thread for a security-assigned booking.",
         tags: ["Security Personnel Chat"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Messages")]
@@ -48,6 +49,7 @@ class ChatController extends Controller
     #[OA\Post(
         path: "/api/security/orders/{id}/messages",
         summary: "Send message",
+        description: "Sends chat message from security personnel to client and broadcasts realtime event.",
         tags: ["Security Personnel Chat"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(

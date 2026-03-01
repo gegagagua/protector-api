@@ -13,6 +13,7 @@ class ClientController extends Controller
     #[OA\Get(
         path: "/api/admin/clients",
         summary: "Get all clients",
+        description: "Returns client list for admin with verification and activity details.",
         tags: ["Admin Clients"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Clients list")]
@@ -38,6 +39,7 @@ class ClientController extends Controller
     #[OA\Get(
         path: "/api/admin/clients/{id}",
         summary: "Get client details",
+        description: "Returns full client profile including verification docs and booking/payment history.",
         tags: ["Admin Clients"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Client details")]
@@ -56,6 +58,7 @@ class ClientController extends Controller
     #[OA\Post(
         path: "/api/admin/clients/{id}/verify",
         summary: "Verify or reject client verification",
+        description: "Approves or rejects client verification request with optional rejection reason.",
         tags: ["Admin Clients"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(

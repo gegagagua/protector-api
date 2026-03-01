@@ -9,6 +9,7 @@ use App\Services\Payments\PaymentGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
 class PaymentController extends Controller
 {
@@ -16,6 +17,14 @@ class PaymentController extends Controller
     {
     }
 
+    #[OA\Get(
+        path: "/api/client/payments",
+        summary: "List client payments",
+        description: "Returns paginated payment history for the authenticated client.",
+        tags: ["Client Payments"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Payments list")]
+    )]
     public function index(Request $request): JsonResponse
     {
         $payments = $request->user()
@@ -30,6 +39,17 @@ class PaymentController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: "/api/client/bookings/{id}/pay",
+        summary: "Pay for booking",
+        description: "Charges selected payment method and marks booking payment status as paid on success.",
+        tags: ["Client Payments"],
+        security: [["sanctum" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "Booking paid"),
+            new OA\Response(response: 422, description: "Invalid payment request")
+        ]
+    )]
     public function payBooking(Request $request, int $bookingId): JsonResponse
     {
         $client = $request->user();

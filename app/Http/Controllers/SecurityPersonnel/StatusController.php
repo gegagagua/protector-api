@@ -20,6 +20,7 @@ class StatusController extends Controller
     #[OA\Post(
         path: "/api/security/orders/{id}/en-route",
         summary: "Mark order as en route",
+        description: "Transitions booking to ongoing state and starts live location tracking.",
         tags: ["Security Personnel Status"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
@@ -75,6 +76,7 @@ class StatusController extends Controller
     #[OA\Post(
         path: "/api/security/orders/{id}/arrived",
         summary: "Mark order as arrived",
+        description: "Transitions booking to arrived state and records latest team location.",
         tags: ["Security Personnel Status"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Status updated")]
@@ -116,6 +118,14 @@ class StatusController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: "/api/security/orders/{id}/complete",
+        summary: "Mark order as completed",
+        description: "Transitions arrived booking to completed and frees team/personnel availability.",
+        tags: ["Security Personnel Status"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Booking completed")]
+    )]
     public function complete(Request $request, $id): JsonResponse
     {
         $personnel = $request->user();
@@ -143,6 +153,7 @@ class StatusController extends Controller
     #[OA\Post(
         path: "/api/security/location/update",
         summary: "Update location tracking",
+        description: "Pushes periodic location updates for active booking tracking.",
         tags: ["Security Personnel Status"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(

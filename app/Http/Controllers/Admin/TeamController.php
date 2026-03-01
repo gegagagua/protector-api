@@ -13,6 +13,7 @@ class TeamController extends Controller
     #[OA\Get(
         path: "/api/admin/teams",
         summary: "Get all security teams",
+        description: "Returns all security teams with personnel and currently active bookings.",
         tags: ["Admin Teams"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Teams list")]
@@ -32,6 +33,7 @@ class TeamController extends Controller
     #[OA\Post(
         path: "/api/admin/teams",
         summary: "Create security team",
+        description: "Creates a new security team with service type and team size.",
         tags: ["Admin Teams"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 201, description: "Team created")]

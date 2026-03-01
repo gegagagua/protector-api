@@ -2,13 +2,13 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Proector API",
-        "description": "API documentation for Proector backend application",
+        "description": "Backend API documentation for Proector mobile and admin platforms.",
         "version": "1.0.0"
     },
     "servers": [
         {
             "url": "/api",
-            "description": "API Server"
+            "description": "API base path"
         },
         {
             "url": "http://localhost"
@@ -21,6 +21,7 @@
                     "Admin Auth"
                 ],
                 "summary": "Login admin",
+                "description": "Authenticates admin with username/password and returns scoped access token.",
                 "operationId": "02064f557af8baf1c24fd21c09b689f3",
                 "requestBody": {
                     "required": true,
@@ -57,6 +58,7 @@
                     "Admin Auth"
                 ],
                 "summary": "Logout admin",
+                "description": "Revokes current admin access token.",
                 "operationId": "18687458536b64e1e1c3725706529bb2",
                 "responses": {
                     "200": {
@@ -76,6 +78,7 @@
                     "Admin Bookings"
                 ],
                 "summary": "Get all bookings",
+                "description": "Returns paginated bookings list for admin operations with optional status filter.",
                 "operationId": "2259635a015b5c8d898d2a8776cdcca0",
                 "responses": {
                     "200": {
@@ -95,6 +98,7 @@
                     "Admin Bookings"
                 ],
                 "summary": "Get booking details",
+                "description": "Returns full booking details for admin review and management.",
                 "operationId": "0e796f08e36f923c8ba17fc6f8af609b",
                 "responses": {
                     "200": {
@@ -112,6 +116,7 @@
                     "Admin Bookings"
                 ],
                 "summary": "Update booking",
+                "description": "Updates editable booking attributes such as start time, duration, team, and notes.",
                 "operationId": "9a2a41ef271ab85e144ed93b08d7d881",
                 "responses": {
                     "200": {
@@ -131,6 +136,7 @@
                     "Admin Bookings"
                 ],
                 "summary": "Assign security team to booking",
+                "description": "Assigns an available team to pending booking and transitions status to confirmed.",
                 "operationId": "b4cfa43fcf8aa7431302910eabb293e5",
                 "requestBody": {
                     "required": true,
@@ -162,12 +168,33 @@
                 ]
             }
         },
+        "/api/admin/bookings/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Complete booking by admin",
+                "description": "Completes booking from admin side and releases assigned team availability.",
+                "operationId": "a4c8dea515a0b260ae799dd72330dc67",
+                "responses": {
+                    "200": {
+                        "description": "Booking completed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/admin/clients": {
             "get": {
                 "tags": [
                     "Admin Clients"
                 ],
                 "summary": "Get all clients",
+                "description": "Returns client list for admin with verification and activity details.",
                 "operationId": "6f606ceba2fad5c8ee58c894625ffdd9",
                 "responses": {
                     "200": {
@@ -187,6 +214,7 @@
                     "Admin Clients"
                 ],
                 "summary": "Get client details",
+                "description": "Returns full client profile including verification docs and booking/payment history.",
                 "operationId": "593c12d3d04096cc17a8e244177eef9c",
                 "responses": {
                     "200": {
@@ -206,6 +234,7 @@
                     "Admin Clients"
                 ],
                 "summary": "Verify or reject client verification",
+                "description": "Approves or rejects client verification request with optional rejection reason.",
                 "operationId": "2eaf5ef5e88099b4a5b11119126f4a01",
                 "requestBody": {
                     "required": true,
@@ -251,6 +280,7 @@
                     "Admin Dashboard"
                 ],
                 "summary": "Get dashboard statistics",
+                "description": "Returns admin dashboard KPIs for bookings, teams, clients, and revenue.",
                 "operationId": "fc67a6092252922b55a3b7c635893104",
                 "responses": {
                     "200": {
@@ -270,6 +300,7 @@
                     "Admin Monitoring"
                 ],
                 "summary": "Get live tracking data",
+                "description": "Returns current active bookings with latest security team locations for monitoring map.",
                 "operationId": "828ca5c09f8baeebf80c7edff4592fde",
                 "responses": {
                     "200": {
@@ -289,10 +320,31 @@
                     "Admin Payments"
                 ],
                 "summary": "Get all payments",
+                "description": "Returns paginated payment records with client and booking references.",
                 "operationId": "6573b1f1a2f5515049c81af9c5f4263e",
                 "responses": {
                     "200": {
                         "description": "Payments list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/reports/summary": {
+            "get": {
+                "tags": [
+                    "Admin Reports"
+                ],
+                "summary": "Get reports summary",
+                "description": "Returns admin analytics summary for bookings, revenue, ratings, and top performing teams.",
+                "operationId": "3adb878cd9b63a53368e1ba4185638cc",
+                "responses": {
+                    "200": {
+                        "description": "Reports summary"
                     }
                 },
                 "security": [
@@ -308,6 +360,7 @@
                     "Admin Teams"
                 ],
                 "summary": "Get all security teams",
+                "description": "Returns all security teams with personnel and currently active bookings.",
                 "operationId": "764f07b4be9872117aef38607cdfb26b",
                 "responses": {
                     "200": {
@@ -325,6 +378,7 @@
                     "Admin Teams"
                 ],
                 "summary": "Create security team",
+                "description": "Creates a new security team with service type and team size.",
                 "operationId": "225d7a32d9d6b773a1a5a9e183e4c42d",
                 "responses": {
                     "201": {
@@ -344,6 +398,7 @@
                     "Admin Vehicles"
                 ],
                 "summary": "Get all vehicles",
+                "description": "Returns all vehicles with availability and usage metadata.",
                 "operationId": "18c0090655662b5e48e91b9f82637cfb",
                 "responses": {
                     "200": {
@@ -361,6 +416,7 @@
                     "Admin Vehicles"
                 ],
                 "summary": "Create vehicle",
+                "description": "Creates a vehicle record that can be assigned to bookings.",
                 "operationId": "ffffef66b3510d35075d5128bc45c0b7",
                 "responses": {
                     "201": {
@@ -374,190 +430,13 @@
                 ]
             }
         },
-        "/api/example": {
-            "get": {
-                "tags": [
-                    "Example"
-                ],
-                "summary": "Get example data",
-                "operationId": "aca3ceea19ded7377ea61161503247fa",
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This is an example endpoint"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": {
-                                                "key": "value"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Example"
-                ],
-                "summary": "Create example data",
-                "operationId": "1f766ee6afd1d28928b0b87954058bac",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "john@example.com"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Resource created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Resource created"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation failed"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/example/{id}": {
-            "get": {
-                "tags": [
-                    "Example"
-                ],
-                "summary": "Get example data by ID",
-                "operationId": "b833651a13318f27729fefa89de01fef",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Example ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Resource not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Resource not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/client/send-otp": {
             "post": {
                 "tags": [
                     "Client Auth"
                 ],
                 "summary": "Send OTP code to client phone",
+                "description": "Issues and sends OTP code for client registration/login with cooldown and throttling.",
                 "operationId": "374c7e4fe772457472cad6e7903003ce",
                 "requestBody": {
                     "required": true,
@@ -610,12 +489,87 @@
                 }
             }
         },
+        "/api/client/signup/send-otp": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Send signup OTP",
+                "description": "Sends OTP code for new client registration using phone number.",
+                "operationId": "ee54475e3d45e4c0bc089e20d70fd682",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent"
+                    },
+                    "429": {
+                        "description": "Cooldown active"
+                    }
+                }
+            }
+        },
+        "/api/client/signin/send-otp": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Send signin OTP",
+                "description": "Sends OTP code for existing client login.",
+                "operationId": "52165335878cc9d61514e75d8d0751c5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent"
+                    },
+                    "429": {
+                        "description": "Cooldown active"
+                    }
+                }
+            }
+        },
         "/api/client/verify-otp": {
             "post": {
                 "tags": [
                     "Client Auth"
                 ],
                 "summary": "Verify OTP and authenticate client",
+                "description": "Validates OTP, creates new client if needed, and returns sanctum access token.",
                 "operationId": "73fb0fb8da632f9496cc24b9bd849e2a",
                 "requestBody": {
                     "required": true,
@@ -680,12 +634,107 @@
                 }
             }
         },
+        "/api/client/signup": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Signup client",
+                "description": "Completes client registration by verifying OTP and requiring first and last name.",
+                "operationId": "2bb42fc79b5091b12dac098fac157c15",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone",
+                                    "code",
+                                    "first_name",
+                                    "last_name"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Giorgi"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Gelashvili"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Signup successful"
+                    },
+                    "422": {
+                        "description": "Validation/OTP failed"
+                    }
+                }
+            }
+        },
+        "/api/client/signin": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Signin client",
+                "description": "Completes client login by verifying OTP for an existing account.",
+                "operationId": "7713fa1a9a5a297094425642be88253b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone",
+                                    "code"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Signin successful"
+                    },
+                    "422": {
+                        "description": "Validation/OTP failed"
+                    }
+                }
+            }
+        },
         "/api/client/logout": {
             "post": {
                 "tags": [
                     "Client Auth"
                 ],
                 "summary": "Logout client",
+                "description": "Revokes current access token for authenticated client session.",
                 "operationId": "2280896a7ed15c7660eb29b57a5859ea",
                 "responses": {
                     "200": {
@@ -705,6 +754,7 @@
                     "Client Booking"
                 ],
                 "summary": "Get available services",
+                "description": "Returns security service catalog including pricing components.",
                 "operationId": "46bc1bfd137a9c81b092adda0a0c874b",
                 "responses": {
                     "200": {
@@ -734,6 +784,7 @@
                     "Client Booking"
                 ],
                 "summary": "Get available vehicles",
+                "description": "Returns currently available vehicles that can be selected during booking.",
                 "operationId": "c3df76150f452682e32cc5fce9474bad",
                 "responses": {
                     "200": {
@@ -742,12 +793,53 @@
                 }
             }
         },
+        "/api/client/wizard-config": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get booking wizard config",
+                "description": "Returns UI constraints and option lists for booking flow steps.",
+                "operationId": "6ac45d9c54781b8b97ed637373fe9177",
+                "responses": {
+                    "200": {
+                        "description": "Wizard configuration"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/quote": {
+            "post": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Calculate booking quote",
+                "description": "Calculates estimated booking amount for selected service, guard count, and duration.",
+                "operationId": "6d54cece0ceaa7d50da0c17baea52dd9",
+                "responses": {
+                    "200": {
+                        "description": "Quote calculated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/client/bookings": {
             "get": {
                 "tags": [
                     "Client Booking"
                 ],
                 "summary": "Get client bookings",
+                "description": "Returns paginated bookings for authenticated client with optional status filter.",
                 "operationId": "22c1431b7874c26ec0445433d03dc9c3",
                 "responses": {
                     "200": {
@@ -765,6 +857,7 @@
                     "Client Booking"
                 ],
                 "summary": "Create a new booking",
+                "description": "Creates a new booking request after verification checks and quote calculation.",
                 "operationId": "547c361eb19e6fad360b8545bc7d68e6",
                 "requestBody": {
                     "required": true,
@@ -855,12 +948,53 @@
                 ]
             }
         },
+        "/api/client/bookings/active": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get active bookings",
+                "description": "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
+                "operationId": "9b412d87b833631c3afc2603a2ec9828",
+                "responses": {
+                    "200": {
+                        "description": "Active bookings list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/history": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get booking history",
+                "description": "Returns completed and cancelled bookings with payment and rating details.",
+                "operationId": "a63fabe80d0dfe88e9ca3bd54edd13af",
+                "responses": {
+                    "200": {
+                        "description": "Booking history list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/client/bookings/{id}": {
             "get": {
                 "tags": [
                     "Client Booking"
                 ],
                 "summary": "Get booking details",
+                "description": "Returns full booking details with team, chat, payment, and rating data.",
                 "operationId": "630eecff5d7866829da927faac3b5f73",
                 "responses": {
                     "200": {
@@ -883,6 +1017,7 @@
                     "Client Booking"
                 ],
                 "summary": "Cancel a booking",
+                "description": "Cancels booking according to state machine rules and applies refund policy.",
                 "operationId": "70b687f0ec9a18e2d1d239ee397bb773",
                 "requestBody": {
                     "content": {
@@ -914,12 +1049,212 @@
                 ]
             }
         },
+        "/api/client/bookings/{id}/messages": {
+            "get": {
+                "tags": [
+                    "Client Chat"
+                ],
+                "summary": "Get booking chat messages",
+                "description": "Returns paginated chat messages for a client booking conversation.",
+                "operationId": "10be9527b8efc8527878c514e81b8772",
+                "responses": {
+                    "200": {
+                        "description": "Messages list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Client Chat"
+                ],
+                "summary": "Send booking message",
+                "description": "Sends a message from client to assigned security personnel for a booking.",
+                "operationId": "bc2e535a503c8db6bef20ba39c1c30e0",
+                "responses": {
+                    "201": {
+                        "description": "Message sent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{bookingId}/messages/{messageId}/read": {
+            "post": {
+                "tags": [
+                    "Client Chat"
+                ],
+                "summary": "Mark message as read",
+                "description": "Marks a booking chat message as read for the authenticated client.",
+                "operationId": "1362e1c295eae52fd9e09d43099c1b8e",
+                "responses": {
+                    "200": {
+                        "description": "Message read status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{id}/sos": {
+            "post": {
+                "tags": [
+                    "Client Chat"
+                ],
+                "summary": "Trigger SOS",
+                "description": "Sends an SOS alert from client to assigned security team and broadcasts realtime alert.",
+                "operationId": "fdc2e966bb72b91071cfbdde69c3f0af",
+                "responses": {
+                    "200": {
+                        "description": "SOS sent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/payments": {
+            "get": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "List client payments",
+                "description": "Returns paginated payment history for the authenticated client.",
+                "operationId": "92a7d44439f67f3e4877e8d6583c241d",
+                "responses": {
+                    "200": {
+                        "description": "Payments list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{id}/pay": {
+            "post": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "Pay for booking",
+                "description": "Charges selected payment method and marks booking payment status as paid on success.",
+                "operationId": "31b3b8bf926c0f4569e9b7e527bdd91b",
+                "responses": {
+                    "200": {
+                        "description": "Booking paid"
+                    },
+                    "422": {
+                        "description": "Invalid payment request"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/payment-methods": {
+            "get": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "List client payment methods",
+                "description": "Returns active client payment methods with default method first.",
+                "operationId": "a470c06569f12d9b3cb72f02c6c5bf7e",
+                "responses": {
+                    "200": {
+                        "description": "Payment methods list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "Save payment method",
+                "description": "Adds a new card or mobile pay method for the authenticated client.",
+                "operationId": "7052956e3151d31f266af4ddb693c3f4",
+                "responses": {
+                    "201": {
+                        "description": "Payment method created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/payment-methods/{id}/set-default": {
+            "post": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "Set default payment method",
+                "description": "Marks the selected payment method as default and unsets previous default.",
+                "operationId": "f762c5a5474632c239f343223b68f16e",
+                "responses": {
+                    "200": {
+                        "description": "Default method updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/payment-methods/{id}": {
+            "delete": {
+                "tags": [
+                    "Client Payments"
+                ],
+                "summary": "Remove payment method",
+                "description": "Soft-removes a payment method from client account by disabling it.",
+                "operationId": "fd70be2c550b8bf1b3511ed1d92f9165",
+                "responses": {
+                    "200": {
+                        "description": "Payment method removed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/client/profile": {
             "get": {
                 "tags": [
                     "Client Profile"
                 ],
                 "summary": "Get client profile",
+                "description": "Returns authenticated client profile, payment methods, and verification documents.",
                 "operationId": "642ed01ec95451fad0d71539dbee1e6e",
                 "responses": {
                     "200": {
@@ -937,6 +1272,7 @@
                     "Client Profile"
                 ],
                 "summary": "Update client profile",
+                "description": "Updates account details such as name, phone, date of birth, sex, and preferences.",
                 "operationId": "b65bf557ed086a7fe40100b336299ff5",
                 "responses": {
                     "200": {
@@ -956,6 +1292,7 @@
                     "Client Profile"
                 ],
                 "summary": "Upload verification documents",
+                "description": "Uploads selfie and ID document and switches verification status to pending review.",
                 "operationId": "a70dafaf341981fe88ffe8f68b2a6bf6",
                 "requestBody": {
                     "required": true,
@@ -989,12 +1326,53 @@
                 ]
             }
         },
+        "/api/client/notification-preferences": {
+            "put": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Update notification preferences",
+                "description": "Updates notification settings for text, voice, and push channels.",
+                "operationId": "1e65afecf49064cff91452e073095cd1",
+                "responses": {
+                    "200": {
+                        "description": "Notification preferences updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/verification/status": {
+            "get": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Get verification status",
+                "description": "Returns current KYC status with rejection reason and document upload flag.",
+                "operationId": "c24b14972e4d400d1c89fb2f48388d3f",
+                "responses": {
+                    "200": {
+                        "description": "Verification status"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/client/bookings/{id}/tracking": {
             "get": {
                 "tags": [
                     "Client Tracking"
                 ],
                 "summary": "Get real-time tracking for booking",
+                "description": "Returns latest security team location and booking status for client tracking screen.",
                 "operationId": "17e37b0368993a0075c4991d69b624b9",
                 "responses": {
                     "200": {
@@ -1008,12 +1386,31 @@
                 ]
             }
         },
+        "/api/payments/webhook": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Handle payment webhook",
+                "description": "Processes payment provider webhook events with idempotency protection.",
+                "operationId": "45a347f7120201c07889a9a050a43164",
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed"
+                    },
+                    "400": {
+                        "description": "Invalid webhook signature"
+                    }
+                }
+            }
+        },
         "/api/security/login": {
             "post": {
                 "tags": [
                     "Security Personnel Auth"
                 ],
                 "summary": "Login security personnel",
+                "description": "Authenticates security personnel with username/password and returns token.",
                 "operationId": "2df18ec2e71faf843c0a52ddfee6697c",
                 "requestBody": {
                     "required": true,
@@ -1050,6 +1447,7 @@
                     "Security Personnel Auth"
                 ],
                 "summary": "Logout security personnel",
+                "description": "Revokes current security personnel access token.",
                 "operationId": "37ad16087a83fcdec6acff9e089f18b9",
                 "responses": {
                     "200": {
@@ -1069,6 +1467,7 @@
                     "Security Personnel Chat"
                 ],
                 "summary": "Get messages for order",
+                "description": "Returns chat thread for a security-assigned booking.",
                 "operationId": "24523dd23fc92aac1cf358f1764306ab",
                 "responses": {
                     "200": {
@@ -1086,6 +1485,7 @@
                     "Security Personnel Chat"
                 ],
                 "summary": "Send message",
+                "description": "Sends chat message from security personnel to client and broadcasts realtime event.",
                 "operationId": "863019cdc69494fa8b0e930969037dc0",
                 "requestBody": {
                     "required": true,
@@ -1132,10 +1532,31 @@
                     "Security Personnel Orders"
                 ],
                 "summary": "Get active orders for security personnel",
+                "description": "Returns active bookings assigned to authenticated security personnel team.",
                 "operationId": "4facf5590084703e1fd43d53a5551056",
                 "responses": {
                     "200": {
                         "description": "Orders list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/history": {
+            "get": {
+                "tags": [
+                    "Security Personnel Orders"
+                ],
+                "summary": "Get completed order history",
+                "description": "Returns completed and cancelled orders assigned to security team.",
+                "operationId": "82e7fe0e403d3a97c1a2dbee816ebdff",
+                "responses": {
+                    "200": {
+                        "description": "Order history list"
                     }
                 },
                 "security": [
@@ -1151,6 +1572,7 @@
                     "Security Personnel Orders"
                 ],
                 "summary": "Get order details",
+                "description": "Returns details of a specific assigned order including chat and latest location.",
                 "operationId": "c77612c4aa6dee92434bf7e018096aa1",
                 "responses": {
                     "200": {
@@ -1170,6 +1592,7 @@
                     "Security Personnel Status"
                 ],
                 "summary": "Mark order as en route",
+                "description": "Transitions booking to ongoing state and starts live location tracking.",
                 "operationId": "6f5739f6d3fba488b7c091d3524fe747",
                 "requestBody": {
                     "content": {
@@ -1206,10 +1629,31 @@
                     "Security Personnel Status"
                 ],
                 "summary": "Mark order as arrived",
+                "description": "Transitions booking to arrived state and records latest team location.",
                 "operationId": "c9502b11546766ac4c0c9b86d5614c1b",
                 "responses": {
                     "200": {
                         "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Security Personnel Status"
+                ],
+                "summary": "Mark order as completed",
+                "description": "Transitions arrived booking to completed and frees team/personnel availability.",
+                "operationId": "81b5693565ed1cba99b038ab8219e712",
+                "responses": {
+                    "200": {
+                        "description": "Booking completed"
                     }
                 },
                 "security": [
@@ -1225,6 +1669,7 @@
                     "Security Personnel Status"
                 ],
                 "summary": "Update location tracking",
+                "description": "Pushes periodic location updates for active booking tracking.",
                 "operationId": "f8d315478f4562e82eeda9a2f3d5374f",
                 "requestBody": {
                     "required": true,
@@ -1277,6 +1722,16 @@
             }
         }
     },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Use Bearer {token} from login or OTP verification endpoints.",
+                "bearerFormat": "Token",
+                "scheme": "bearer"
+            }
+        }
+    },
     "tags": [
         {
             "name": "Admin Auth",
@@ -1303,16 +1758,16 @@
             "description": "Admin Payments"
         },
         {
+            "name": "Admin Reports",
+            "description": "Admin Reports"
+        },
+        {
             "name": "Admin Teams",
             "description": "Admin Teams"
         },
         {
             "name": "Admin Vehicles",
             "description": "Admin Vehicles"
-        },
-        {
-            "name": "Example",
-            "description": "Example"
         },
         {
             "name": "Client Auth",
@@ -1323,12 +1778,24 @@
             "description": "Client Booking"
         },
         {
+            "name": "Client Chat",
+            "description": "Client Chat"
+        },
+        {
+            "name": "Client Payments",
+            "description": "Client Payments"
+        },
+        {
             "name": "Client Profile",
             "description": "Client Profile"
         },
         {
             "name": "Client Tracking",
             "description": "Client Tracking"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         },
         {
             "name": "Security Personnel Auth",

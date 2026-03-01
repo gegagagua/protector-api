@@ -19,6 +19,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/admin/bookings",
         summary: "Get all bookings",
+        description: "Returns paginated bookings list for admin operations with optional status filter.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Bookings list")]
@@ -44,6 +45,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/admin/bookings/{id}",
         summary: "Get booking details",
+        description: "Returns full booking details for admin review and management.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Booking details")]
@@ -62,6 +64,7 @@ class BookingController extends Controller
     #[OA\Post(
         path: "/api/admin/bookings/{id}/assign-team",
         summary: "Assign security team to booking",
+        description: "Assigns an available team to pending booking and transitions status to confirmed.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
@@ -111,6 +114,7 @@ class BookingController extends Controller
     #[OA\Put(
         path: "/api/admin/bookings/{id}",
         summary: "Update booking",
+        description: "Updates editable booking attributes such as start time, duration, team, and notes.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Booking updated")]
@@ -135,6 +139,14 @@ class BookingController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: "/api/admin/bookings/{id}/complete",
+        summary: "Complete booking by admin",
+        description: "Completes booking from admin side and releases assigned team availability.",
+        tags: ["Admin Bookings"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Booking completed")]
+    )]
     public function complete($id): JsonResponse
     {
         $booking = Booking::with('securityTeam')->findOrFail($id);

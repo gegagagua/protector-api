@@ -8,9 +8,18 @@ use App\Models\Payment;
 use App\Models\Rating;
 use App\Models\SecurityTeam;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OA;
 
 class ReportController extends Controller
 {
+    #[OA\Get(
+        path: "/api/admin/reports/summary",
+        summary: "Get reports summary",
+        description: "Returns admin analytics summary for bookings, revenue, ratings, and top performing teams.",
+        tags: ["Admin Reports"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Reports summary")]
+    )]
     public function summary(): JsonResponse
     {
         $from = now()->startOfMonth();

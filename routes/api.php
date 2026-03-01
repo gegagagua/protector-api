@@ -35,6 +35,10 @@ use Illuminate\Support\Facades\Route;
 // Client Routes
 Route::prefix('client')->group(function () {
     // Authentication
+    Route::post('/signup/send-otp', [ClientAuthController::class, 'sendSignupOtp'])->middleware('throttle:5,1');
+    Route::post('/signin/send-otp', [ClientAuthController::class, 'sendSigninOtp'])->middleware('throttle:5,1');
+    Route::post('/signup', [ClientAuthController::class, 'signup'])->middleware('throttle:10,1');
+    Route::post('/signin', [ClientAuthController::class, 'signin'])->middleware('throttle:10,1');
     Route::post('/send-otp', [ClientAuthController::class, 'sendOtp'])->middleware('throttle:5,1');
     Route::post('/verify-otp', [ClientAuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
     

@@ -41,6 +41,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/client/services",
         summary: "Get available services",
+        description: "Returns security service catalog including pricing components.",
         tags: ["Client Booking"],
         responses: [
             new OA\Response(
@@ -84,6 +85,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/client/vehicles",
         summary: "Get available vehicles",
+        description: "Returns currently available vehicles that can be selected during booking.",
         tags: ["Client Booking"],
         responses: [
             new OA\Response(
@@ -104,6 +106,14 @@ class BookingController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/client/wizard-config",
+        summary: "Get booking wizard config",
+        description: "Returns UI constraints and option lists for booking flow steps.",
+        tags: ["Client Booking"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Wizard configuration")]
+    )]
     public function getWizardConfig(): JsonResponse
     {
         return response()->json([
@@ -121,6 +131,14 @@ class BookingController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: "/api/client/bookings/quote",
+        summary: "Calculate booking quote",
+        description: "Calculates estimated booking amount for selected service, guard count, and duration.",
+        tags: ["Client Booking"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Quote calculated")]
+    )]
     public function quote(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -150,6 +168,7 @@ class BookingController extends Controller
     #[OA\Post(
         path: "/api/client/bookings",
         summary: "Create a new booking",
+        description: "Creates a new booking request after verification checks and quote calculation.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
@@ -258,6 +277,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/client/bookings",
         summary: "Get client bookings",
+        description: "Returns paginated bookings for authenticated client with optional status filter.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         responses: [
@@ -283,6 +303,14 @@ class BookingController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/client/bookings/active",
+        summary: "Get active bookings",
+        description: "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
+        tags: ["Client Booking"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Active bookings list")]
+    )]
     public function active(Request $request): JsonResponse
     {
         $client = $request->user();
@@ -298,6 +326,14 @@ class BookingController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/client/bookings/history",
+        summary: "Get booking history",
+        description: "Returns completed and cancelled bookings with payment and rating details.",
+        tags: ["Client Booking"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Booking history list")]
+    )]
     public function history(Request $request): JsonResponse
     {
         $client = $request->user();
@@ -316,6 +352,7 @@ class BookingController extends Controller
     #[OA\Get(
         path: "/api/client/bookings/{id}",
         summary: "Get booking details",
+        description: "Returns full booking details with team, chat, payment, and rating data.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         responses: [
@@ -339,6 +376,7 @@ class BookingController extends Controller
     #[OA\Post(
         path: "/api/client/bookings/{id}/cancel",
         summary: "Cancel a booking",
+        description: "Cancels booking according to state machine rules and applies refund policy.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(

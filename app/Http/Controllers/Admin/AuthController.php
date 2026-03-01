@@ -15,6 +15,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: "/api/admin/login",
         summary: "Login admin",
+        description: "Authenticates admin with username/password and returns scoped access token.",
         tags: ["Admin Auth"],
         requestBody: new OA\RequestBody(
             required: true,
@@ -61,6 +62,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: "/api/admin/logout",
         summary: "Logout admin",
+        description: "Revokes current admin access token.",
         tags: ["Admin Auth"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Logged out")]

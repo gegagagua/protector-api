@@ -14,6 +14,7 @@ class MonitoringController extends Controller
     #[OA\Get(
         path: "/api/admin/monitoring/live",
         summary: "Get live tracking data",
+        description: "Returns current active bookings with latest security team locations for monitoring map.",
         tags: ["Admin Monitoring"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Live tracking data")]
