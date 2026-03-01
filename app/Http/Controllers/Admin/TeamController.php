@@ -36,18 +36,36 @@ class TeamController extends Controller
         description: "Creates a new security team with service type and team size.",
         tags: ["Admin Teams"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["title", "team_size", "service_type"],
+                properties: [
+                    new OA\Property(property: "title", type: "string", example: "Alpha Tactical Team"),
+                    new OA\Property(property: "team_size", type: "integer", example: 4),
+                    new OA\Property(property: "service_type", type: "string", enum: ["armed", "unarmed"], example: "armed"),
+                    new OA\Property(property: "description", type: "string", example: "Rapid response tactical unit", nullable: true)
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 201, description: "Team created")]
     )]
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'team_size' => 'required|integer|min:1',
             'service_type' => 'required|in:armed,unarmed',
             'description' => 'nullable|string',
         ]);
 
-        $team = SecurityTeam::create($validated);
+        $team = SecurityTeam::create([
+            'name' => $validated['name'] ?? $validated['title'],
+            'team_size' => $validated['team_size'],
+            'service_type' => $validated['service_type'],
+            'description' => $validated['description'] ?? null,
+        ]);
 
         return response()->json([
             'status' => 'success',

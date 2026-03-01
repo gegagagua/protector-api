@@ -10,6 +10,8 @@ class SecurityTeam extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $appends = ['title'];
+
     protected $fillable = [
         'name',
         'team_size',
@@ -54,5 +56,10 @@ class SecurityTeam extends Model
     public function scopeUnarmed($query)
     {
         return $query->where('service_type', 'unarmed');
+    }
+
+    public function getTitleAttribute(): string
+    {
+        return (string) $this->name;
     }
 }

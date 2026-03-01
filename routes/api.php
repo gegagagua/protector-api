@@ -114,6 +114,7 @@ Route::prefix('security')->group(function () {
 Route::prefix('admin')->group(function () {
     // Authentication
     Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::get('/vehicles', [AdminVehicleController::class, 'index']);
     
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:admin,admin'])->group(function () {
@@ -140,7 +141,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/clients/{id}/verify', [AdminClientController::class, 'updateVerification']);
         
         // Vehicles
-        Route::get('/vehicles', [AdminVehicleController::class, 'index']);
         Route::post('/vehicles', [AdminVehicleController::class, 'store']);
         
         // Monitoring

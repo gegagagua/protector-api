@@ -10,8 +10,8 @@ use OpenApi\Attributes as OA;
     description: 'Backend API documentation for Proector mobile and admin platforms.'
 )]
 #[OA\Server(
-    url: '/api',
-    description: 'API base path'
+    url: '/',
+    description: 'API server root'
 )]
 #[OA\SecurityScheme(
     securityScheme: 'sanctum',

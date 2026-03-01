@@ -7,8 +7,8 @@
     },
     "servers": [
         {
-            "url": "/api",
-            "description": "API base path"
+            "url": "/",
+            "description": "API server root"
         },
         {
             "url": "http://localhost"
@@ -380,6 +380,44 @@
                 "summary": "Create security team",
                 "description": "Creates a new security team with service type and team size.",
                 "operationId": "225d7a32d9d6b773a1a5a9e183e4c42d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "team_size",
+                                    "service_type"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Alpha Tactical Team"
+                                    },
+                                    "team_size": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "service_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "armed",
+                                            "unarmed"
+                                        ],
+                                        "example": "armed"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Rapid response tactical unit",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Team created"
@@ -404,12 +442,7 @@
                     "200": {
                         "description": "Vehicles list"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "post": {
                 "tags": [
@@ -418,6 +451,72 @@
                 "summary": "Create vehicle",
                 "description": "Creates a vehicle record that can be assigned to bookings.",
                 "operationId": "ffffef66b3510d35075d5128bc45c0b7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "image_url",
+                                    "license_plate",
+                                    "vehicle_type"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Cadillac Escalade"
+                                    },
+                                    "image_url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://example.com/vehicles/escalade.png"
+                                    },
+                                    "make": {
+                                        "type": "string",
+                                        "example": "Cadillac",
+                                        "nullable": true
+                                    },
+                                    "model": {
+                                        "type": "string",
+                                        "example": "Escalade",
+                                        "nullable": true
+                                    },
+                                    "license_plate": {
+                                        "type": "string",
+                                        "example": "SEC-2914"
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "Black",
+                                        "nullable": true
+                                    },
+                                    "year": {
+                                        "type": "integer",
+                                        "example": 2022,
+                                        "nullable": true
+                                    },
+                                    "vehicle_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sedan",
+                                            "suv",
+                                            "van",
+                                            "motorcycle"
+                                        ],
+                                        "example": "suv"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "VIP transport SUV",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Vehicle created"

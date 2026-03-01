@@ -10,9 +10,12 @@ class Vehicle extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $appends = ['title'];
+
     protected $fillable = [
         'make',
         'model',
+        'image_url',
         'license_plate',
         'color',
         'year',
@@ -42,5 +45,10 @@ class Vehicle extends Model
     public function scopeInUse($query)
     {
         return $query->where('status', 'in_use');
+    }
+
+    public function getTitleAttribute(): string
+    {
+        return trim(($this->make ?? '') . ' ' . ($this->model ?? ''));
     }
 }

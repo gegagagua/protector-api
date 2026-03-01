@@ -15,7 +15,6 @@ class VehicleController extends Controller
         summary: "Get all vehicles",
         description: "Returns all vehicles with availability and usage metadata.",
         tags: ["Admin Vehicles"],
-        security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Vehicles list")]
     )]
     public function index(): JsonResponse
@@ -34,13 +33,32 @@ class VehicleController extends Controller
         description: "Creates a vehicle record that can be assigned to bookings.",
         tags: ["Admin Vehicles"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["title", "image_url", "license_plate", "vehicle_type"],
+                properties: [
+                    new OA\Property(property: "title", type: "string", example: "Cadillac Escalade"),
+                    new OA\Property(property: "image_url", type: "string", format: "uri", example: "https://example.com/vehicles/escalade.png"),
+                    new OA\Property(property: "make", type: "string", example: "Cadillac", nullable: true),
+                    new OA\Property(property: "model", type: "string", example: "Escalade", nullable: true),
+                    new OA\Property(property: "license_plate", type: "string", example: "SEC-2914"),
+                    new OA\Property(property: "color", type: "string", example: "Black", nullable: true),
+                    new OA\Property(property: "year", type: "integer", example: 2022, nullable: true),
+                    new OA\Property(property: "vehicle_type", type: "string", enum: ["sedan", "suv", "van", "motorcycle"], example: "suv"),
+                    new OA\Property(property: "description", type: "string", example: "VIP transport SUV", nullable: true)
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 201, description: "Vehicle created")]
     )]
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'make' => 'required|string|max:255',
-            'model' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'make' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'image_url' => 'required|url|max:2048',
             'license_plate' => 'required|string|unique:vehicles,license_plate',
             'color' => 'nullable|string|max:50',
             'year' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
@@ -48,7 +66,20 @@ class VehicleController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $vehicle = Vehicle::create($validated);
+        $title = trim($validated['title']);
+        $make = $validated['make'] ?? strtok($title, ' ') ?: 'Vehicle';
+        $model = $validated['model'] ?? $title;
+
+        $vehicle = Vehicle::create([
+            'make' => $make,
+            'model' => $model,
+            'image_url' => $validated['image_url'],
+            'license_plate' => $validated['license_plate'],
+            'color' => $validated['color'] ?? null,
+            'year' => $validated['year'] ?? null,
+            'vehicle_type' => $validated['vehicle_type'],
+            'description' => $validated['description'] ?? null,
+        ]);
 
         return response()->json([
             'status' => 'success',
