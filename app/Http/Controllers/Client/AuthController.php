@@ -5,15 +5,20 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\OtpCode;
+use App\Services\Otp\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly OtpService $otpService)
+    {
+    }
+
     #[OA\Post(
         path: "/api/client/send-otp",
         summary: "Send OTP code to client phone",
@@ -50,26 +55,22 @@ class AuthController extends Controller
 
         $phone = $validated['phone'];
         $type = $validated['type'] ?? 'login';
+        $cooldownSeconds = (int) config('services.otp.cooldown_seconds', 30);
+        $cooldownKey = "otp:cooldown:{$phone}";
+        $nowTs = now()->timestamp;
+        $cooldownUntil = (int) Cache::get($cooldownKey, 0);
 
-        // Generate 6-digit OTP
-        $otpCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        if ($cooldownUntil > $nowTs) {
+            $secondsLeft = $cooldownUntil - $nowTs;
 
-        // Invalidate previous OTPs for this phone
-        OtpCode::where('phone', $phone)
-            ->where('is_used', false)
-            ->update(['is_used' => true]);
+            return response()->json([
+                'status' => 'error',
+                'message' => "Please wait {$secondsLeft} seconds before requesting a new OTP.",
+            ], 429);
+        }
 
-        // Create new OTP
-        OtpCode::create([
-            'phone' => $phone,
-            'code' => $otpCode,
-            'type' => $type,
-            'expires_at' => now()->addMinutes(5),
-        ]);
-
-        // TODO: Send OTP via SMS service (Twilio, etc.)
-        // For now, we'll log it (remove in production)
-        Log::info("OTP for {$phone}: {$otpCode}");
+        $otpCode = $this->otpService->createAndSend($phone, $type);
+        Cache::put($cooldownKey, $nowTs + $cooldownSeconds, now()->addSeconds($cooldownSeconds));
 
         return response()->json([
             'status' => 'success',
@@ -121,10 +122,26 @@ class AuthController extends Controller
 
         $otp = OtpCode::valid()
             ->forPhone($validated['phone'])
-            ->forCode($validated['code'])
+            ->latest()
             ->first();
 
-        if (!$otp) {
+        if (!$otp || !$otp->code_hash) {
+            throw ValidationException::withMessages([
+                'code' => ['Invalid or expired OTP code.'],
+            ]);
+        }
+
+        $maxAttempts = (int) config('services.otp.max_attempts', 5);
+
+        if ($otp->attempt_count >= $maxAttempts) {
+            throw ValidationException::withMessages([
+                'code' => ['OTP attempt limit exceeded. Please request a new OTP.'],
+            ]);
+        }
+
+        if (!Hash::check($validated['code'], $otp->code_hash)) {
+            $otp->increment('attempt_count');
+
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired OTP code.'],
             ]);
@@ -160,7 +177,7 @@ class AuthController extends Controller
         }
 
         // Generate token
-        $token = $client->createToken('client-auth')->plainTextToken;
+        $token = $client->createToken('client-auth', ['client'])->plainTextToken;
 
         return response()->json([
             'status' => 'success',

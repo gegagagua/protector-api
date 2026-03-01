@@ -49,7 +49,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $admin->createToken('admin-auth')->plainTextToken;
+        $token = $admin->createToken('admin-auth', ['admin'])->plainTextToken;
 
         return response()->json([
             'status' => 'success',

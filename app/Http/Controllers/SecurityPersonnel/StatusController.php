@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers\SecurityPersonnel;
 
+use App\Events\LocationUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\LocationTracking;
+use App\Services\Booking\BookingStateMachine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class StatusController extends Controller
 {
+    public function __construct(private readonly BookingStateMachine $stateMachine)
+    {
+    }
+
     #[OA\Post(
         path: "/api/security/orders/{id}/en-route",
         summary: "Mark order as en route",
@@ -30,37 +36,34 @@ class StatusController extends Controller
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
-
-        $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
-
-        if ($booking->status !== 'confirmed') {
+        if (!$team) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid booking status',
-            ], 400);
+                'message' => 'Security personnel is not assigned to a team.',
+            ], 422);
         }
+
+        $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
 
         $validated = $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
         ]);
 
-        $booking->update([
-            'status' => 'ongoing',
-            'started_at' => now(),
-        ]);
+        $booking = $this->stateMachine->transition($booking, 'ongoing');
 
         // Update personnel status
         $personnel->update(['status' => 'busy']);
 
         // Track location
-        LocationTracking::create([
+        $location = LocationTracking::create([
             'booking_id' => $booking->id,
             'security_personnel_id' => $personnel->id,
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'tracked_at' => now(),
         ]);
+        event(new LocationUpdated($location));
 
         return response()->json([
             'status' => 'success',
@@ -80,39 +83,60 @@ class StatusController extends Controller
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
-
-        $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
-
-        if ($booking->status !== 'ongoing') {
+        if (!$team) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid booking status',
-            ], 400);
+                'message' => 'Security personnel is not assigned to a team.',
+            ], 422);
         }
+
+        $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
 
         $validated = $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
         ]);
 
-        $booking->update([
-            'status' => 'arrived',
-            'arrived_at' => now(),
-        ]);
+        $booking = $this->stateMachine->transition($booking, 'arrived');
 
         // Track location
-        LocationTracking::create([
+        $location = LocationTracking::create([
             'booking_id' => $booking->id,
             'security_personnel_id' => $personnel->id,
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'tracked_at' => now(),
         ]);
+        event(new LocationUpdated($location));
 
         return response()->json([
             'status' => 'success',
             'message' => 'Status updated to arrived',
             'booking' => $booking->fresh(),
+        ]);
+    }
+
+    public function complete(Request $request, $id): JsonResponse
+    {
+        $personnel = $request->user();
+        $team = $personnel->securityTeam;
+        if (!$team) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Security personnel is not assigned to a team.',
+            ], 422);
+        }
+
+        $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
+        $booking = $this->stateMachine->transition($booking, 'completed');
+
+        $team->update(['status' => 'available']);
+        $personnel->update(['status' => 'available']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Booking marked as completed',
+            'booking' => $booking,
         ]);
     }
 
@@ -152,14 +176,14 @@ class StatusController extends Controller
 
         $booking = Booking::findOrFail($validated['booking_id']);
 
-        if ($booking->security_team_id !== $personnel->securityTeam->id) {
+        if (!$personnel->securityTeam || $booking->security_team_id !== $personnel->securityTeam->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized',
             ], 403);
         }
 
-        LocationTracking::create([
+        $location = LocationTracking::create([
             'booking_id' => $validated['booking_id'],
             'security_personnel_id' => $personnel->id,
             'latitude' => $validated['latitude'],
@@ -169,6 +193,7 @@ class StatusController extends Controller
             'heading' => $validated['heading'] ?? null,
             'tracked_at' => now(),
         ]);
+        event(new LocationUpdated($location));
 
         return response()->json([
             'status' => 'success',

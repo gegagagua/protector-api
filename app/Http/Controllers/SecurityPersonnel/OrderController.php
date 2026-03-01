@@ -41,6 +41,30 @@ class OrderController extends Controller
         ]);
     }
 
+    public function history(Request $request): JsonResponse
+    {
+        $personnel = $request->user();
+        $team = $personnel->securityTeam;
+
+        if (!$team) {
+            return response()->json([
+                'status' => 'success',
+                'orders' => [],
+            ]);
+        }
+
+        $orders = Booking::where('security_team_id', $team->id)
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->with(['client', 'vehicle'])
+            ->latest('completed_at')
+            ->paginate(20);
+
+        return response()->json([
+            'status' => 'success',
+            'orders' => $orders,
+        ]);
+    }
+
     #[OA\Get(
         path: "/api/security/orders/{id}",
         summary: "Get order details",

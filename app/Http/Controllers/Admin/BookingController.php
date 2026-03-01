@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\SecurityTeam;
-use App\Models\Vehicle;
+use App\Services\Booking\BookingStateMachine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class BookingController extends Controller
 {
+    public function __construct(private readonly BookingStateMachine $stateMachine)
+    {
+    }
+
     #[OA\Get(
         path: "/api/admin/bookings",
         summary: "Get all bookings",
@@ -89,10 +93,8 @@ class BookingController extends Controller
             ], 400);
         }
 
-        $booking->update([
+        $booking = $this->stateMachine->transition($booking, 'confirmed', [
             'security_team_id' => $validated['security_team_id'],
-            'status' => 'confirmed',
-            'confirmed_at' => now(),
         ]);
 
         $team->update(['status' => 'busy']);
@@ -102,7 +104,7 @@ class BookingController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Security team assigned successfully',
-            'booking' => $booking->fresh(['securityTeam']),
+            'booking' => $booking->load('securityTeam'),
         ]);
     }
 
@@ -130,6 +132,22 @@ class BookingController extends Controller
             'status' => 'success',
             'message' => 'Booking updated successfully',
             'booking' => $booking->fresh(),
+        ]);
+    }
+
+    public function complete($id): JsonResponse
+    {
+        $booking = Booking::with('securityTeam')->findOrFail($id);
+        $booking = $this->stateMachine->transition($booking, 'completed');
+
+        if ($booking->securityTeam) {
+            $booking->securityTeam->update(['status' => 'available']);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Booking completed successfully',
+            'booking' => $booking,
         ]);
     }
 }

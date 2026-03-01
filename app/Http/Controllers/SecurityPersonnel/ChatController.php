@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\SecurityPersonnel;
 
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Client;
@@ -24,6 +25,12 @@ class ChatController extends Controller
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
+        if (!$team) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Security personnel is not assigned to a team.',
+            ], 422);
+        }
 
         $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
 
@@ -59,6 +66,12 @@ class ChatController extends Controller
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
+        if (!$team) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Security personnel is not assigned to a team.',
+            ], 422);
+        }
 
         $booking = Booking::where('security_team_id', $team->id)->findOrFail($id);
 
@@ -77,7 +90,7 @@ class ChatController extends Controller
             'message_type' => $validated['message_type'] ?? 'text',
         ]);
 
-        // TODO: Send push notification to client
+        event(new MessageSent($message));
 
         return response()->json([
             'status' => 'success',

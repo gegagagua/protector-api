@@ -126,15 +126,34 @@ class Booking extends Model
     // Methods
     public function canBeCancelled()
     {
-        return in_array($this->status, ['pending', 'confirmed']) && !$this->started_at;
+        return in_array($this->status, ['pending', 'confirmed', 'ongoing'], true);
     }
 
-    public function calculateRefund()
+    public function calculateRefundAmount(): float
     {
-        if ($this->status === 'cancelled' && $this->started_at) {
-            // Partial refund if cancelled after team started
-            return $this->total_amount * 0.5; // 50% refund
+        $paidAmount = (float) $this->paid_amount;
+
+        if ($paidAmount <= 0) {
+            return 0.0;
         }
-        return $this->total_amount; // Full refund
+
+        if ($this->started_at) {
+            // Partial refund if cancelled after dispatch/start.
+            return round($paidAmount * 0.8, 2);
+        }
+
+        // Full refund before dispatch/start.
+        return round($paidAmount, 2);
+    }
+
+    public function getAllowedTransitions(): array
+    {
+        return match ($this->status) {
+            'pending' => ['confirmed', 'cancelled'],
+            'confirmed' => ['ongoing', 'cancelled'],
+            'ongoing' => ['arrived', 'cancelled'],
+            'arrived' => ['completed'],
+            default => [],
+        };
     }
 }

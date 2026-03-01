@@ -16,6 +16,8 @@ class Client extends Model
         'last_name',
         'phone',
         'email',
+        'date_of_birth',
+        'sex',
         'verification_status',
         'selfie_path',
         'id_document_path',
@@ -29,6 +31,7 @@ class Client extends Model
     protected $casts = [
         'phone_verified_at' => 'datetime',
         'email_verified_at' => 'datetime',
+        'date_of_birth' => 'date',
         'is_active' => 'boolean',
         'notification_preferences' => 'array',
     ];

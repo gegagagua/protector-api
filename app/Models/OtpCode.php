@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
-
 class OtpCode extends Model
 {
     use HasFactory;
@@ -13,14 +11,19 @@ class OtpCode extends Model
     protected $fillable = [
         'phone',
         'code',
+        'code_hash',
         'type',
         'is_used',
+        'attempt_count',
         'expires_at',
+        'last_sent_at',
     ];
 
     protected $casts = [
         'is_used' => 'boolean',
+        'attempt_count' => 'integer',
         'expires_at' => 'datetime',
+        'last_sent_at' => 'datetime',
     ];
 
     // Scopes
@@ -35,11 +38,6 @@ class OtpCode extends Model
         return $query->where('phone', $phone);
     }
 
-    public function scopeForCode($query, $code)
-    {
-        return $query->where('code', $code);
-    }
-
     // Methods
     public function isValid()
     {
@@ -48,6 +46,8 @@ class OtpCode extends Model
 
     public function markAsUsed()
     {
-        $this->update(['is_used' => true]);
+        $this->update([
+            'is_used' => true,
+        ]);
     }
 }

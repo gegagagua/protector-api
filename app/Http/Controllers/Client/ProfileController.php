@@ -3,14 +3,21 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 
 class ProfileController extends Controller
 {
+    private function normalizePhone(?string $phone): ?string
+    {
+        if (!$phone) {
+            return null;
+        }
+
+        return preg_replace('/\s+/', '', $phone);
+    }
+
     #[OA\Get(
         path: "/api/client/profile",
         summary: "Get client profile",
@@ -43,8 +50,18 @@ class ProfileController extends Controller
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'email' => 'sometimes|nullable|email|max:255',
+            'phone' => 'sometimes|string|regex:/^\+?[1-9]\d{1,14}$/',
+            'date_of_birth' => 'sometimes|nullable|date|before:today',
+            'sex' => 'sometimes|nullable|in:male,female,other',
             'notification_preferences' => 'sometimes|array',
+            'notification_preferences.text' => 'nullable|boolean',
+            'notification_preferences.voice' => 'nullable|boolean',
+            'notification_preferences.push' => 'nullable|boolean',
         ]);
+
+        if (array_key_exists('phone', $validated)) {
+            $validated['phone'] = $this->normalizePhone($validated['phone']);
+        }
 
         $client->update($validated);
 
@@ -114,6 +131,45 @@ class ProfileController extends Controller
             'status' => 'success',
             'message' => 'Verification documents uploaded successfully',
             'verification_status' => 'pending',
+        ]);
+    }
+
+    public function updateNotificationPreferences(Request $request): JsonResponse
+    {
+        $client = $request->user();
+
+        $validated = $request->validate([
+            'text' => 'nullable|boolean',
+            'voice' => 'nullable|boolean',
+            'push' => 'nullable|boolean',
+        ]);
+
+        $client->update([
+            'notification_preferences' => [
+                'text' => (bool) ($validated['text'] ?? false),
+                'voice' => (bool) ($validated['voice'] ?? false),
+                'push' => (bool) ($validated['push'] ?? true),
+            ],
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Notification preferences updated.',
+            'notification_preferences' => $client->fresh()->notification_preferences,
+        ]);
+    }
+
+    public function verificationStatus(Request $request): JsonResponse
+    {
+        $client = $request->user();
+
+        return response()->json([
+            'status' => 'success',
+            'verification' => [
+                'status' => $client->verification_status,
+                'rejection_reason' => $client->verification_rejection_reason,
+                'documents_uploaded' => !empty($client->selfie_path) && !empty($client->id_document_path),
+            ],
         ]);
     }
 }

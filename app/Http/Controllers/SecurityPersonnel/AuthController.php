@@ -49,7 +49,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $personnel->createToken('security-auth')->plainTextToken;
+        $token = $personnel->createToken('security-auth', ['security'])->plainTextToken;
 
         return response()->json([
             'status' => 'success',

@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\Client;
-use App\Models\SecurityTeam;
 use App\Models\Vehicle;
+use App\Services\Booking\BookingStateMachine;
+use App\Services\Payments\PaymentGateway;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,29 @@ use OpenApi\Attributes as OA;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private readonly BookingStateMachine $stateMachine,
+        private readonly PaymentGateway $paymentGateway
+    )
+    {
+    }
+
+    private function pricingFor(string $serviceType): array
+    {
+        if ($serviceType === 'armed') {
+            return ['base_per_hour' => 100, 'base_per_personnel' => 50];
+        }
+
+        return ['base_per_hour' => 70, 'base_per_personnel' => 40];
+    }
+
+    private function calculatePrice(string $serviceType, int $securityCount, int $durationHours): float
+    {
+        $pricing = $this->pricingFor($serviceType);
+
+        return (float) (($pricing['base_per_hour'] + ($pricing['base_per_personnel'] * $securityCount)) * $durationHours);
+    }
+
     #[OA\Get(
         path: "/api/client/services",
         summary: "Get available services",
@@ -37,15 +61,17 @@ class BookingController extends Controller
                 'type' => 'armed',
                 'name' => 'იარაღიანი დაცვა',
                 'description' => 'იარაღიანი დაცვის სერვისი',
-                'base_price_per_hour' => 100,
-                'base_price_per_personnel' => 50,
+                'base_price_per_hour' => $this->pricingFor('armed')['base_per_hour'],
+                'base_price_per_personnel' => $this->pricingFor('armed')['base_per_personnel'],
+                'min_duration_hours' => 1,
             ],
             [
                 'type' => 'unarmed',
                 'name' => 'უიარაღო დაცვა',
                 'description' => 'უიარაღო დაცვის სერვისი',
-                'base_price_per_hour' => 70,
-                'base_price_per_personnel' => 40,
+                'base_price_per_hour' => $this->pricingFor('unarmed')['base_per_hour'],
+                'base_price_per_personnel' => $this->pricingFor('unarmed')['base_per_personnel'],
+                'min_duration_hours' => 1,
             ],
         ];
 
@@ -75,6 +101,49 @@ class BookingController extends Controller
         return response()->json([
             'status' => 'success',
             'vehicles' => $vehicles,
+        ]);
+    }
+
+    public function getWizardConfig(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'config' => [
+                'min_persons_to_protect' => 1,
+                'max_persons_to_protect' => 20,
+                'min_security_personnel' => 1,
+                'max_security_personnel' => 10,
+                'min_duration_hours' => 1,
+                'max_duration_hours' => 24,
+                'outfits' => ['tactical', 'formal', 'casual'],
+                'booking_types' => ['immediate', 'scheduled'],
+            ],
+        ]);
+    }
+
+    public function quote(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'service_type' => 'required|in:armed,unarmed',
+            'security_personnel_count' => 'required|integer|min:1|max:10',
+            'duration_hours' => 'required|integer|min:1|max:24',
+        ]);
+
+        $amount = $this->calculatePrice(
+            $validated['service_type'],
+            (int) $validated['security_personnel_count'],
+            (int) $validated['duration_hours']
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'quote' => [
+                'currency' => 'GEL',
+                'amount' => $amount,
+                'service_type' => $validated['service_type'],
+                'security_personnel_count' => (int) $validated['security_personnel_count'],
+                'duration_hours' => (int) $validated['duration_hours'],
+            ],
         ]);
     }
 
@@ -111,8 +180,8 @@ class BookingController extends Controller
     {
         $client = $request->user();
 
-        // Check if client is verified (required for booking)
-        if (!$client->isVerified() && $request->input('booking_type') === 'immediate') {
+        // Booking requires verified profile.
+        if (!$client->isVerified()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Verification required to create booking',
@@ -131,19 +200,20 @@ class BookingController extends Controller
             'start_time' => 'required|date',
             'duration_hours' => 'required|integer|min:1|max:24',
             'booking_type' => 'required|in:immediate,scheduled',
+            'guard_outfit' => 'nullable|in:tactical,formal,casual',
             'persons' => 'nullable|array',
             'persons.*.name' => 'required|string|max:255',
             'persons.*.phone' => 'nullable|string',
             'persons.*.notes' => 'nullable|string',
         ]);
 
-        // Calculate price
-        $basePricePerHour = $validated['service_type'] === 'armed' ? 100 : 70;
-        $basePricePerPersonnel = $validated['service_type'] === 'armed' ? 50 : 40;
-        $totalAmount = ($basePricePerHour + ($basePricePerPersonnel * $validated['security_personnel_count'])) * $validated['duration_hours'];
+        $totalAmount = $this->calculatePrice(
+            $validated['service_type'],
+            (int) $validated['security_personnel_count'],
+            (int) $validated['duration_hours']
+        );
 
-        DB::beginTransaction();
-        try {
+        $booking = DB::transaction(function () use ($client, $validated, $totalAmount) {
             $booking = Booking::create([
                 'client_id' => $client->id,
                 'service_type' => $validated['service_type'],
@@ -154,12 +224,14 @@ class BookingController extends Controller
                 'latitude' => $validated['latitude'] ?? null,
                 'longitude' => $validated['longitude'] ?? null,
                 'start_time' => $validated['start_time'],
-                'end_time' => now()->parse($validated['start_time'])->addHours($validated['duration_hours']),
+                'end_time' => Carbon::parse($validated['start_time'])->addHours((int) $validated['duration_hours']),
                 'duration_hours' => $validated['duration_hours'],
                 'booking_type' => $validated['booking_type'],
                 'status' => 'pending',
                 'total_amount' => $totalAmount,
+                'paid_amount' => 0,
                 'payment_status' => 'pending',
+                'admin_notes' => isset($validated['guard_outfit']) ? "outfit:{$validated['guard_outfit']}" : null,
             ]);
 
             // Add persons to protect
@@ -173,20 +245,14 @@ class BookingController extends Controller
                 }
             }
 
-            DB::commit();
+            return $booking->load(['bookingPersons', 'vehicle']);
+        });
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Booking created successfully',
-                'booking' => $booking->load(['bookingPersons', 'vehicle']),
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create booking',
-            ], 500);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Booking created successfully',
+            'booking' => $booking,
+        ], 201);
     }
 
     #[OA\Get(
@@ -210,6 +276,36 @@ class BookingController extends Controller
         }
 
         $bookings = $query->latest()->paginate(15);
+
+        return response()->json([
+            'status' => 'success',
+            'bookings' => $bookings,
+        ]);
+    }
+
+    public function active(Request $request): JsonResponse
+    {
+        $client = $request->user();
+        $bookings = $client->bookings()
+            ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'arrived'])
+            ->with(['securityTeam', 'vehicle'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'bookings' => $bookings,
+        ]);
+    }
+
+    public function history(Request $request): JsonResponse
+    {
+        $client = $request->user();
+        $bookings = $client->bookings()
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->with(['securityTeam', 'vehicle', 'payments', 'rating'])
+            ->latest()
+            ->paginate(20);
 
         return response()->json([
             'status' => 'success',
@@ -269,23 +365,42 @@ class BookingController extends Controller
             ], 403);
         }
 
-        $refundAmount = $booking->calculateRefund();
+        $refundAmount = $booking->calculateRefundAmount();
+        $refundStatus = $booking->payment_status;
 
-        $booking->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
+        if ($refundAmount > 0) {
+            $latestPayment = $booking->payments()->latest()->first();
+
+            if ($latestPayment) {
+                $result = $this->paymentGateway->refund([
+                    'booking_id' => $booking->id,
+                    'payment_id' => $latestPayment->id,
+                    'paid_amount' => (float) $latestPayment->amount,
+                    'amount' => $refundAmount,
+                    'transaction_id' => $latestPayment->transaction_id,
+                ]);
+
+                $latestPayment->update([
+                    'status' => $result['status'],
+                    'notes' => 'Refund processed on cancellation',
+                    'payment_data' => array_merge($latestPayment->payment_data ?? [], ['refund' => $result]),
+                ]);
+
+                $refundStatus = $refundAmount < (float) $booking->paid_amount ? 'partially_refunded' : 'fully_refunded';
+            }
+        }
+
+        $updated = $this->stateMachine->transition($booking, 'cancelled', [
             'cancellation_reason' => $request->input('reason'),
             'refunded_amount' => $refundAmount,
-            'payment_status' => $refundAmount < $booking->total_amount ? 'partially_refunded' : 'fully_refunded',
+            'payment_status' => $refundStatus,
         ]);
-
-        // TODO: Process refund through payment gateway
 
         return response()->json([
             'status' => 'success',
             'message' => 'Booking cancelled successfully',
             'refund_amount' => $refundAmount,
-            'booking' => $booking,
+            'booking' => $updated,
         ]);
     }
 }
