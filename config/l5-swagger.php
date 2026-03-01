@@ -93,7 +93,7 @@ return [
             /*
              * Edit to set the api's base path
              */
-            'base' => env('L5_SWAGGER_BASE_PATH', null),
+            'base' => env('L5_SWAGGER_BASE_PATH', env('APP_URL', 'http://localhost:8000')),
 
             /*
              * Absolute path to directories that should be excluded from scanning

@@ -1,0 +1,1350 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Proector API",
+        "description": "API documentation for Proector backend application",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "API Server"
+        },
+        {
+            "url": "http://localhost"
+        }
+    ],
+    "paths": {
+        "/api/admin/login": {
+            "post": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Login admin",
+                "operationId": "02064f557af8baf1c24fd21c09b689f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful"
+                    }
+                }
+            }
+        },
+        "/api/admin/logout": {
+            "post": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Logout admin",
+                "operationId": "18687458536b64e1e1c3725706529bb2",
+                "responses": {
+                    "200": {
+                        "description": "Logged out"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings": {
+            "get": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Get all bookings",
+                "operationId": "2259635a015b5c8d898d2a8776cdcca0",
+                "responses": {
+                    "200": {
+                        "description": "Bookings list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Get booking details",
+                "operationId": "0e796f08e36f923c8ba17fc6f8af609b",
+                "responses": {
+                    "200": {
+                        "description": "Booking details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Update booking",
+                "operationId": "9a2a41ef271ab85e144ed93b08d7d881",
+                "responses": {
+                    "200": {
+                        "description": "Booking updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings/{id}/assign-team": {
+            "post": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Assign security team to booking",
+                "operationId": "b4cfa43fcf8aa7431302910eabb293e5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "security_team_id"
+                                ],
+                                "properties": {
+                                    "security_team_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Team assigned"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/clients": {
+            "get": {
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get all clients",
+                "operationId": "6f606ceba2fad5c8ee58c894625ffdd9",
+                "responses": {
+                    "200": {
+                        "description": "Clients list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/clients/{id}": {
+            "get": {
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get client details",
+                "operationId": "593c12d3d04096cc17a8e244177eef9c",
+                "responses": {
+                    "200": {
+                        "description": "Client details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/clients/{id}/verify": {
+            "post": {
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Verify or reject client verification",
+                "operationId": "2eaf5ef5e88099b4a5b11119126f4a01",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "verification_status"
+                                ],
+                                "properties": {
+                                    "verification_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "verified",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "rejection_reason": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/dashboard": {
+            "get": {
+                "tags": [
+                    "Admin Dashboard"
+                ],
+                "summary": "Get dashboard statistics",
+                "operationId": "fc67a6092252922b55a3b7c635893104",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard data"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/monitoring/live": {
+            "get": {
+                "tags": [
+                    "Admin Monitoring"
+                ],
+                "summary": "Get live tracking data",
+                "operationId": "828ca5c09f8baeebf80c7edff4592fde",
+                "responses": {
+                    "200": {
+                        "description": "Live tracking data"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payments": {
+            "get": {
+                "tags": [
+                    "Admin Payments"
+                ],
+                "summary": "Get all payments",
+                "operationId": "6573b1f1a2f5515049c81af9c5f4263e",
+                "responses": {
+                    "200": {
+                        "description": "Payments list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/teams": {
+            "get": {
+                "tags": [
+                    "Admin Teams"
+                ],
+                "summary": "Get all security teams",
+                "operationId": "764f07b4be9872117aef38607cdfb26b",
+                "responses": {
+                    "200": {
+                        "description": "Teams list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Teams"
+                ],
+                "summary": "Create security team",
+                "operationId": "225d7a32d9d6b773a1a5a9e183e4c42d",
+                "responses": {
+                    "201": {
+                        "description": "Team created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicles": {
+            "get": {
+                "tags": [
+                    "Admin Vehicles"
+                ],
+                "summary": "Get all vehicles",
+                "operationId": "18c0090655662b5e48e91b9f82637cfb",
+                "responses": {
+                    "200": {
+                        "description": "Vehicles list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Vehicles"
+                ],
+                "summary": "Create vehicle",
+                "operationId": "ffffef66b3510d35075d5128bc45c0b7",
+                "responses": {
+                    "201": {
+                        "description": "Vehicle created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/example": {
+            "get": {
+                "tags": [
+                    "Example"
+                ],
+                "summary": "Get example data",
+                "operationId": "aca3ceea19ded7377ea61161503247fa",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "This is an example endpoint"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": {
+                                                "key": "value"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Example"
+                ],
+                "summary": "Create example data",
+                "operationId": "1f766ee6afd1d28928b0b87954058bac",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Resource created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource created"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/example/{id}": {
+            "get": {
+                "tags": [
+                    "Example"
+                ],
+                "summary": "Get example data by ID",
+                "operationId": "b833651a13318f27729fefa89de01fef",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Example ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resource not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/send-otp": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Send OTP code to client phone",
+                "operationId": "374c7e4fe772457472cad6e7903003ce",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "registration",
+                                            "login"
+                                        ],
+                                        "example": "login"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent to your phone"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/verify-otp": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Verify OTP and authenticate client",
+                "operationId": "73fb0fb8da632f9496cc24b9bd849e2a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone",
+                                    "code"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555123456"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "first_name": {
+                                        "description": "Required for new registration (when user doesn't exist)",
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "description": "Required for new registration (when user doesn't exist)",
+                                        "type": "string",
+                                        "example": "Doe"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "client": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid OTP"
+                    }
+                }
+            }
+        },
+        "/api/client/logout": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Logout client",
+                "operationId": "2280896a7ed15c7660eb29b57a5859ea",
+                "responses": {
+                    "200": {
+                        "description": "Logged out successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/services": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get available services",
+                "operationId": "46bc1bfd137a9c81b092adda0a0c874b",
+                "responses": {
+                    "200": {
+                        "description": "Available services",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "services": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/vehicles": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get available vehicles",
+                "operationId": "c3df76150f452682e32cc5fce9474bad",
+                "responses": {
+                    "200": {
+                        "description": "Available vehicles"
+                    }
+                }
+            }
+        },
+        "/api/client/bookings": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get client bookings",
+                "operationId": "22c1431b7874c26ec0445433d03dc9c3",
+                "responses": {
+                    "200": {
+                        "description": "Bookings list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Create a new booking",
+                "operationId": "547c361eb19e6fad360b8545bc7d68e6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "service_type",
+                                    "security_personnel_count",
+                                    "persons_to_protect_count",
+                                    "address",
+                                    "start_time",
+                                    "duration_hours",
+                                    "booking_type"
+                                ],
+                                "properties": {
+                                    "service_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "armed",
+                                            "unarmed"
+                                        ]
+                                    },
+                                    "security_personnel_count": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "persons_to_protect_count": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "vehicle_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "nullable": true
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "nullable": true
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "duration_hours": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "booking_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "immediate",
+                                            "scheduled"
+                                        ]
+                                    },
+                                    "persons": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Get booking details",
+                "operationId": "630eecff5d7866829da927faac3b5f73",
+                "responses": {
+                    "200": {
+                        "description": "Booking details"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Client Booking"
+                ],
+                "summary": "Cancel a booking",
+                "operationId": "70b687f0ec9a18e2d1d239ee397bb773",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled"
+                    },
+                    "403": {
+                        "description": "Cannot cancel booking"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/profile": {
+            "get": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Get client profile",
+                "operationId": "642ed01ec95451fad0d71539dbee1e6e",
+                "responses": {
+                    "200": {
+                        "description": "Profile data"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Update client profile",
+                "operationId": "b65bf557ed086a7fe40100b336299ff5",
+                "responses": {
+                    "200": {
+                        "description": "Profile updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/verification/upload": {
+            "post": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Upload verification documents",
+                "operationId": "a70dafaf341981fe88ffe8f68b2a6bf6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "selfie": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "id_document": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Documents uploaded"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/bookings/{id}/tracking": {
+            "get": {
+                "tags": [
+                    "Client Tracking"
+                ],
+                "summary": "Get real-time tracking for booking",
+                "operationId": "17e37b0368993a0075c4991d69b624b9",
+                "responses": {
+                    "200": {
+                        "description": "Tracking data"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/login": {
+            "post": {
+                "tags": [
+                    "Security Personnel Auth"
+                ],
+                "summary": "Login security personnel",
+                "operationId": "2df18ec2e71faf843c0a52ddfee6697c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful"
+                    }
+                }
+            }
+        },
+        "/api/security/logout": {
+            "post": {
+                "tags": [
+                    "Security Personnel Auth"
+                ],
+                "summary": "Logout security personnel",
+                "operationId": "37ad16087a83fcdec6acff9e089f18b9",
+                "responses": {
+                    "200": {
+                        "description": "Logged out"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/{id}/messages": {
+            "get": {
+                "tags": [
+                    "Security Personnel Chat"
+                ],
+                "summary": "Get messages for order",
+                "operationId": "24523dd23fc92aac1cf358f1764306ab",
+                "responses": {
+                    "200": {
+                        "description": "Messages"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Security Personnel Chat"
+                ],
+                "summary": "Send message",
+                "operationId": "863019cdc69494fa8b0e930969037dc0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "message"
+                                ],
+                                "properties": {
+                                    "message": {
+                                        "type": "string"
+                                    },
+                                    "message_type": {
+                                        "type": "string",
+                                        "default": "text",
+                                        "enum": [
+                                            "text",
+                                            "sos",
+                                            "quick_response"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message sent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders": {
+            "get": {
+                "tags": [
+                    "Security Personnel Orders"
+                ],
+                "summary": "Get active orders for security personnel",
+                "operationId": "4facf5590084703e1fd43d53a5551056",
+                "responses": {
+                    "200": {
+                        "description": "Orders list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/{id}": {
+            "get": {
+                "tags": [
+                    "Security Personnel Orders"
+                ],
+                "summary": "Get order details",
+                "operationId": "c77612c4aa6dee92434bf7e018096aa1",
+                "responses": {
+                    "200": {
+                        "description": "Order details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/{id}/en-route": {
+            "post": {
+                "tags": [
+                    "Security Personnel Status"
+                ],
+                "summary": "Mark order as en route",
+                "operationId": "6f5739f6d3fba488b7c091d3524fe747",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "latitude": {
+                                        "type": "number"
+                                    },
+                                    "longitude": {
+                                        "type": "number"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/orders/{id}/arrived": {
+            "post": {
+                "tags": [
+                    "Security Personnel Status"
+                ],
+                "summary": "Mark order as arrived",
+                "operationId": "c9502b11546766ac4c0c9b86d5614c1b",
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/security/location/update": {
+            "post": {
+                "tags": [
+                    "Security Personnel Status"
+                ],
+                "summary": "Update location tracking",
+                "operationId": "f8d315478f4562e82eeda9a2f3d5374f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_id",
+                                    "latitude",
+                                    "longitude"
+                                ],
+                                "properties": {
+                                    "booking_id": {
+                                        "type": "integer"
+                                    },
+                                    "latitude": {
+                                        "type": "number"
+                                    },
+                                    "longitude": {
+                                        "type": "number"
+                                    },
+                                    "accuracy": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "speed": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "heading": {
+                                        "type": "number",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Location updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Admin Auth",
+            "description": "Admin Auth"
+        },
+        {
+            "name": "Admin Bookings",
+            "description": "Admin Bookings"
+        },
+        {
+            "name": "Admin Clients",
+            "description": "Admin Clients"
+        },
+        {
+            "name": "Admin Dashboard",
+            "description": "Admin Dashboard"
+        },
+        {
+            "name": "Admin Monitoring",
+            "description": "Admin Monitoring"
+        },
+        {
+            "name": "Admin Payments",
+            "description": "Admin Payments"
+        },
+        {
+            "name": "Admin Teams",
+            "description": "Admin Teams"
+        },
+        {
+            "name": "Admin Vehicles",
+            "description": "Admin Vehicles"
+        },
+        {
+            "name": "Example",
+            "description": "Example"
+        },
+        {
+            "name": "Client Auth",
+            "description": "Client Auth"
+        },
+        {
+            "name": "Client Booking",
+            "description": "Client Booking"
+        },
+        {
+            "name": "Client Profile",
+            "description": "Client Profile"
+        },
+        {
+            "name": "Client Tracking",
+            "description": "Client Tracking"
+        },
+        {
+            "name": "Security Personnel Auth",
+            "description": "Security Personnel Auth"
+        },
+        {
+            "name": "Security Personnel Chat",
+            "description": "Security Personnel Chat"
+        },
+        {
+            "name": "Security Personnel Orders",
+            "description": "Security Personnel Orders"
+        },
+        {
+            "name": "Security Personnel Status",
+            "description": "Security Personnel Status"
+        }
+    ]
+}
