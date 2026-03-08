@@ -16,6 +16,7 @@ class Client extends Model
         'last_name',
         'phone',
         'email',
+        'password',
         'date_of_birth',
         'sex',
         'verification_status',
@@ -34,9 +35,11 @@ class Client extends Model
         'date_of_birth' => 'date',
         'is_active' => 'boolean',
         'notification_preferences' => 'array',
+        'password' => 'hashed',
     ];
 
     protected $hidden = [
+        'password',
         'deleted_at',
     ];
 

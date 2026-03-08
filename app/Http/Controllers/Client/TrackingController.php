@@ -17,6 +17,9 @@ class TrackingController extends Controller
         description: "Returns latest security team location and booking status for client tracking screen.",
         tags: ["Client Tracking"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Tracking data")]
     )]
     public function getTracking(Request $request, $id): JsonResponse

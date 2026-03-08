@@ -42,6 +42,9 @@ class ClientController extends Controller
         description: "Returns full client profile including verification docs and booking/payment history.",
         tags: ["Admin Clients"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Client ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Client details")]
     )]
     public function show($id): JsonResponse
@@ -66,11 +69,14 @@ class ClientController extends Controller
             content: new OA\JsonContent(
                 required: ["verification_status"],
                 properties: [
-                    new OA\Property(property: "verification_status", type: "string", enum: ["verified", "rejected"]),
-                    new OA\Property(property: "rejection_reason", type: "string", nullable: true)
+                    new OA\Property(property: "verification_status", type: "string", description: "Verification decision", enum: ["verified", "rejected"], example: "verified"),
+                    new OA\Property(property: "rejection_reason", type: "string", description: "Reason when verification is rejected", nullable: true, example: "Document image is blurry")
                 ]
             )
         ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Client ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Verification status updated")]
     )]
     public function updateVerification(Request $request, $id): JsonResponse

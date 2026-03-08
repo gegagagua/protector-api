@@ -41,10 +41,10 @@ class TeamController extends Controller
             content: new OA\JsonContent(
                 required: ["title", "team_size", "service_type"],
                 properties: [
-                    new OA\Property(property: "title", type: "string", example: "Alpha Tactical Team"),
-                    new OA\Property(property: "team_size", type: "integer", example: 4),
-                    new OA\Property(property: "service_type", type: "string", enum: ["armed", "unarmed"], example: "armed"),
-                    new OA\Property(property: "description", type: "string", example: "Rapid response tactical unit", nullable: true)
+                    new OA\Property(property: "title", type: "string", description: "Display title for the team", example: "Alpha Tactical Team"),
+                    new OA\Property(property: "team_size", type: "integer", description: "Number of personnel in team", example: 4),
+                    new OA\Property(property: "service_type", type: "string", description: "Team specialization type", enum: ["armed", "unarmed"], example: "armed"),
+                    new OA\Property(property: "description", type: "string", description: "Optional team notes/description", example: "Rapid response tactical unit", nullable: true)
                 ]
             )
         ),

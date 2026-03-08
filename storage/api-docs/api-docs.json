@@ -34,10 +34,14 @@
                                 ],
                                 "properties": {
                                     "username": {
-                                        "type": "string"
+                                        "description": "Admin username",
+                                        "type": "string",
+                                        "example": "admin"
                                     },
                                     "password": {
-                                        "type": "string"
+                                        "description": "Admin account password",
+                                        "type": "string",
+                                        "example": "admin1234"
                                     }
                                 },
                                 "type": "object"
@@ -63,6 +67,58 @@
                 "responses": {
                     "200": {
                         "description": "Logged out"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/change-password": {
+            "post": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Change admin password",
+                "description": "Changes authenticated admin password after validating current password.",
+                "operationId": "49c8c2e4d4978d3ece5b96ec2a523a9d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "description": "Current admin password",
+                                        "type": "string",
+                                        "example": "old-password"
+                                    },
+                                    "new_password": {
+                                        "description": "New password (minimum 8 characters)",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    },
+                                    "new_password_confirmation": {
+                                        "description": "Repeat new password to confirm",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed"
                     }
                 },
                 "security": [
@@ -100,6 +156,17 @@
                 "summary": "Get booking details",
                 "description": "Returns full booking details for admin review and management.",
                 "operationId": "0e796f08e36f923c8ba17fc6f8af609b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Booking details"
@@ -118,6 +185,50 @@
                 "summary": "Update booking",
                 "description": "Updates editable booking attributes such as start time, duration, team, and notes.",
                 "operationId": "9a2a41ef271ab85e144ed93b08d7d881",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "start_time": {
+                                        "description": "Updated booking start date/time",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-03-10T12:00:00Z"
+                                    },
+                                    "duration_hours": {
+                                        "description": "Updated duration in hours",
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "security_team_id": {
+                                        "description": "Reassign booking to another team",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "admin_notes": {
+                                        "description": "Internal admin notes",
+                                        "type": "string",
+                                        "example": "Client requested earlier arrival"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Booking updated"
@@ -138,6 +249,17 @@
                 "summary": "Assign security team to booking",
                 "description": "Assigns an available team to pending booking and transitions status to confirmed.",
                 "operationId": "b4cfa43fcf8aa7431302910eabb293e5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -148,7 +270,9 @@
                                 ],
                                 "properties": {
                                     "security_team_id": {
-                                        "type": "integer"
+                                        "description": "ID of available security team to assign",
+                                        "type": "integer",
+                                        "example": 3
                                     }
                                 },
                                 "type": "object"
@@ -176,6 +300,17 @@
                 "summary": "Complete booking by admin",
                 "description": "Completes booking from admin side and releases assigned team availability.",
                 "operationId": "a4c8dea515a0b260ae799dd72330dc67",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Booking completed"
@@ -216,6 +351,17 @@
                 "summary": "Get client details",
                 "description": "Returns full client profile including verification docs and booking/payment history.",
                 "operationId": "593c12d3d04096cc17a8e244177eef9c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Client ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Client details"
@@ -236,6 +382,17 @@
                 "summary": "Verify or reject client verification",
                 "description": "Approves or rejects client verification request with optional rejection reason.",
                 "operationId": "2eaf5ef5e88099b4a5b11119126f4a01",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Client ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -246,14 +403,18 @@
                                 ],
                                 "properties": {
                                     "verification_status": {
+                                        "description": "Verification decision",
                                         "type": "string",
                                         "enum": [
                                             "verified",
                                             "rejected"
-                                        ]
+                                        ],
+                                        "example": "verified"
                                     },
                                     "rejection_reason": {
+                                        "description": "Reason when verification is rejected",
                                         "type": "string",
+                                        "example": "Document image is blurry",
                                         "nullable": true
                                     }
                                 },
@@ -392,14 +553,17 @@
                                 ],
                                 "properties": {
                                     "title": {
+                                        "description": "Display title for the team",
                                         "type": "string",
                                         "example": "Alpha Tactical Team"
                                     },
                                     "team_size": {
+                                        "description": "Number of personnel in team",
                                         "type": "integer",
                                         "example": 4
                                     },
                                     "service_type": {
+                                        "description": "Team specialization type",
                                         "type": "string",
                                         "enum": [
                                             "armed",
@@ -408,6 +572,7 @@
                                         "example": "armed"
                                     },
                                     "description": {
+                                        "description": "Optional team notes/description",
                                         "type": "string",
                                         "example": "Rapid response tactical unit",
                                         "nullable": true
@@ -464,39 +629,47 @@
                                 ],
                                 "properties": {
                                     "title": {
+                                        "description": "Human readable vehicle title",
                                         "type": "string",
                                         "example": "Cadillac Escalade"
                                     },
                                     "image_url": {
+                                        "description": "Public image URL of vehicle",
                                         "type": "string",
                                         "format": "uri",
                                         "example": "https://example.com/vehicles/escalade.png"
                                     },
                                     "make": {
+                                        "description": "Vehicle manufacturer",
                                         "type": "string",
                                         "example": "Cadillac",
                                         "nullable": true
                                     },
                                     "model": {
+                                        "description": "Vehicle model",
                                         "type": "string",
                                         "example": "Escalade",
                                         "nullable": true
                                     },
                                     "license_plate": {
+                                        "description": "Unique license plate",
                                         "type": "string",
                                         "example": "SEC-2914"
                                     },
                                     "color": {
+                                        "description": "Vehicle color",
                                         "type": "string",
                                         "example": "Black",
                                         "nullable": true
                                     },
                                     "year": {
+                                        "description": "Production year",
                                         "type": "integer",
                                         "example": 2022,
                                         "nullable": true
                                     },
                                     "vehicle_type": {
+                                        "description": "Vehicle category used in booking",
                                         "type": "string",
                                         "enum": [
                                             "sedan",
@@ -507,6 +680,7 @@
                                         "example": "suv"
                                     },
                                     "description": {
+                                        "description": "Optional internal/admin notes",
                                         "type": "string",
                                         "example": "VIP transport SUV",
                                         "nullable": true
@@ -529,65 +703,6 @@
                 ]
             }
         },
-        "/api/client/send-otp": {
-            "post": {
-                "tags": [
-                    "Client Auth"
-                ],
-                "summary": "Send OTP code to client phone",
-                "description": "Issues and sends OTP code for client registration/login with cooldown and throttling.",
-                "operationId": "374c7e4fe772457472cad6e7903003ce",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "phone"
-                                ],
-                                "properties": {
-                                    "phone": {
-                                        "type": "string",
-                                        "example": "+995555123456"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "enum": [
-                                            "registration",
-                                            "login"
-                                        ],
-                                        "example": "login"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "OTP sent successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "OTP sent to your phone"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/client/signup/send-otp": {
             "post": {
                 "tags": [
@@ -606,6 +721,7 @@
                                 ],
                                 "properties": {
                                     "phone": {
+                                        "description": "Client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
                                     }
@@ -643,6 +759,7 @@
                                 ],
                                 "properties": {
                                     "phone": {
+                                        "description": "Existing client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
                                     }
@@ -658,77 +775,6 @@
                     },
                     "429": {
                         "description": "Cooldown active"
-                    }
-                }
-            }
-        },
-        "/api/client/verify-otp": {
-            "post": {
-                "tags": [
-                    "Client Auth"
-                ],
-                "summary": "Verify OTP and authenticate client",
-                "description": "Validates OTP, creates new client if needed, and returns sanctum access token.",
-                "operationId": "73fb0fb8da632f9496cc24b9bd849e2a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "phone",
-                                    "code"
-                                ],
-                                "properties": {
-                                    "phone": {
-                                        "type": "string",
-                                        "example": "+995555123456"
-                                    },
-                                    "code": {
-                                        "type": "string",
-                                        "example": "123456"
-                                    },
-                                    "first_name": {
-                                        "description": "Required for new registration (when user doesn't exist)",
-                                        "type": "string",
-                                        "example": "John"
-                                    },
-                                    "last_name": {
-                                        "description": "Required for new registration (when user doesn't exist)",
-                                        "type": "string",
-                                        "example": "Doe"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Authentication successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "token": {
-                                            "type": "string"
-                                        },
-                                        "client": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Invalid OTP"
                     }
                 }
             }
@@ -754,18 +800,22 @@
                                 ],
                                 "properties": {
                                     "phone": {
+                                        "description": "Phone number that received OTP",
                                         "type": "string",
                                         "example": "+995555123456"
                                     },
                                     "code": {
+                                        "description": "OTP verification code",
                                         "type": "string",
-                                        "example": "123456"
+                                        "example": "1111"
                                     },
                                     "first_name": {
+                                        "description": "Client first name",
                                         "type": "string",
                                         "example": "Giorgi"
                                     },
                                     "last_name": {
+                                        "description": "Client last name",
                                         "type": "string",
                                         "example": "Gelashvili"
                                     }
@@ -804,12 +854,14 @@
                                 ],
                                 "properties": {
                                     "phone": {
+                                        "description": "Existing client phone number",
                                         "type": "string",
                                         "example": "+995555123456"
                                     },
                                     "code": {
+                                        "description": "OTP verification code",
                                         "type": "string",
-                                        "example": "123456"
+                                        "example": "1111"
                                     }
                                 },
                                 "type": "object"
@@ -847,6 +899,58 @@
                 ]
             }
         },
+        "/api/client/change-password": {
+            "post": {
+                "tags": [
+                    "Client Auth"
+                ],
+                "summary": "Change client password",
+                "description": "Sets or changes authenticated client password. current_password is required only when password already exists.",
+                "operationId": "900f2f2f83348dbfaf878cd0b1efec68",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "description": "Required when client already has a password",
+                                        "type": "string",
+                                        "example": "old-password",
+                                        "nullable": true
+                                    },
+                                    "new_password": {
+                                        "description": "New password (minimum 8 characters)",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    },
+                                    "new_password_confirmation": {
+                                        "description": "Repeat new password to confirm",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/client/services": {
             "get": {
                 "tags": [
@@ -863,6 +967,7 @@
                                 "schema": {
                                     "properties": {
                                         "services": {
+                                            "description": "List of service definitions with pricing metadata",
                                             "type": "array",
                                             "items": {
                                                 "type": "object"
@@ -920,6 +1025,42 @@
                 "summary": "Calculate booking quote",
                 "description": "Calculates estimated booking amount for selected service, guard count, and duration.",
                 "operationId": "6d54cece0ceaa7d50da0c17baea52dd9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "service_type",
+                                    "security_personnel_count",
+                                    "duration_hours"
+                                ],
+                                "properties": {
+                                    "service_type": {
+                                        "description": "Requested security service type",
+                                        "type": "string",
+                                        "enum": [
+                                            "armed",
+                                            "unarmed"
+                                        ],
+                                        "example": "armed"
+                                    },
+                                    "security_personnel_count": {
+                                        "description": "Number of guards requested",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "duration_hours": {
+                                        "description": "Service duration in hours",
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Quote calculated"
@@ -974,6 +1115,7 @@
                                 ],
                                 "properties": {
                                     "service_type": {
+                                        "description": "Security service type",
                                         "type": "string",
                                         "enum": [
                                             "armed",
@@ -981,39 +1123,52 @@
                                         ]
                                     },
                                     "security_personnel_count": {
+                                        "description": "Requested number of guards",
                                         "type": "integer",
                                         "example": 2
                                     },
                                     "persons_to_protect_count": {
+                                        "description": "Count of protected persons",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "vehicle_id": {
+                                        "description": "Optional preferred vehicle ID",
                                         "type": "integer",
                                         "nullable": true
                                     },
                                     "address": {
-                                        "type": "string"
+                                        "description": "Service address",
+                                        "type": "string",
+                                        "example": "Rustaveli Ave 10, Tbilisi"
                                     },
                                     "latitude": {
+                                        "description": "Address latitude",
                                         "type": "number",
                                         "format": "float",
+                                        "example": 41.71509999999999962483343551866710186004638671875,
                                         "nullable": true
                                     },
                                     "longitude": {
+                                        "description": "Address longitude",
                                         "type": "number",
                                         "format": "float",
+                                        "example": 44.827100000000001500666257925331592559814453125,
                                         "nullable": true
                                     },
                                     "start_time": {
+                                        "description": "Booking start datetime",
                                         "type": "string",
-                                        "format": "date-time"
+                                        "format": "date-time",
+                                        "example": "2026-03-10T12:00:00Z"
                                     },
                                     "duration_hours": {
+                                        "description": "Booking duration in hours",
                                         "type": "integer",
                                         "example": 4
                                     },
                                     "booking_type": {
+                                        "description": "Immediate or scheduled booking",
                                         "type": "string",
                                         "enum": [
                                             "immediate",
@@ -1021,6 +1176,7 @@
                                         ]
                                     },
                                     "persons": {
+                                        "description": "Optional list of persons to protect",
                                         "type": "array",
                                         "items": {
                                             "type": "object"
@@ -1095,6 +1251,17 @@
                 "summary": "Get booking details",
                 "description": "Returns full booking details with team, chat, payment, and rating data.",
                 "operationId": "630eecff5d7866829da927faac3b5f73",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Booking details"
@@ -1118,13 +1285,26 @@
                 "summary": "Cancel a booking",
                 "description": "Cancels booking according to state machine rules and applies refund policy.",
                 "operationId": "70b687f0ec9a18e2d1d239ee397bb773",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
                                     "reason": {
+                                        "description": "Optional cancellation reason",
                                         "type": "string",
+                                        "example": "Plan changed",
                                         "nullable": true
                                     }
                                 },
@@ -1156,6 +1336,17 @@
                 "summary": "Get booking chat messages",
                 "description": "Returns paginated chat messages for a client booking conversation.",
                 "operationId": "10be9527b8efc8527878c514e81b8772",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Messages list"
@@ -1174,6 +1365,46 @@
                 "summary": "Send booking message",
                 "description": "Sends a message from client to assigned security personnel for a booking.",
                 "operationId": "bc2e535a503c8db6bef20ba39c1c30e0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "message"
+                                ],
+                                "properties": {
+                                    "message": {
+                                        "description": "Text body to send in chat",
+                                        "type": "string",
+                                        "example": "Hello, where are you now?"
+                                    },
+                                    "message_type": {
+                                        "description": "Type of message payload",
+                                        "type": "string",
+                                        "enum": [
+                                            "text",
+                                            "quick_response"
+                                        ],
+                                        "example": "text"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Message sent"
@@ -1194,6 +1425,26 @@
                 "summary": "Mark message as read",
                 "description": "Marks a booking chat message as read for the authenticated client.",
                 "operationId": "1362e1c295eae52fd9e09d43099c1b8e",
+                "parameters": [
+                    {
+                        "name": "bookingId",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "messageId",
+                        "in": "path",
+                        "description": "Message ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Message read status updated"
@@ -1214,6 +1465,34 @@
                 "summary": "Trigger SOS",
                 "description": "Sends an SOS alert from client to assigned security team and broadcasts realtime alert.",
                 "operationId": "fdc2e966bb72b91071cfbdde69c3f0af",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "message": {
+                                        "description": "Optional custom SOS message",
+                                        "type": "string",
+                                        "example": "Emergency, need immediate help!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "SOS sent"
@@ -1254,6 +1533,37 @@
                 "summary": "Pay for booking",
                 "description": "Charges selected payment method and marks booking payment status as paid on success.",
                 "operationId": "31b3b8bf926c0f4569e9b7e527bdd91b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "payment_method_id"
+                                ],
+                                "properties": {
+                                    "payment_method_id": {
+                                        "description": "Saved client payment method identifier",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Booking paid"
@@ -1295,6 +1605,64 @@
                 "summary": "Save payment method",
                 "description": "Adds a new card or mobile pay method for the authenticated client.",
                 "operationId": "7052956e3151d31f266af4ddb693c3f4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "token"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "Payment method type",
+                                        "type": "string",
+                                        "enum": [
+                                            "card",
+                                            "mobile_pay"
+                                        ],
+                                        "example": "card"
+                                    },
+                                    "provider": {
+                                        "description": "Payment provider name",
+                                        "type": "string",
+                                        "example": "Visa",
+                                        "nullable": true
+                                    },
+                                    "last_four": {
+                                        "description": "Last 4 digits of card",
+                                        "type": "string",
+                                        "example": "4242",
+                                        "nullable": true
+                                    },
+                                    "card_holder_name": {
+                                        "description": "Card holder full name",
+                                        "type": "string",
+                                        "example": "Giorgi Gelashvili",
+                                        "nullable": true
+                                    },
+                                    "token": {
+                                        "description": "Provider tokenized payment source",
+                                        "type": "string",
+                                        "example": "pm_tok_123"
+                                    },
+                                    "is_default": {
+                                        "description": "Marks method as default when true",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "metadata": {
+                                        "description": "Optional provider specific metadata",
+                                        "type": "object",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Payment method created"
@@ -1315,6 +1683,17 @@
                 "summary": "Set default payment method",
                 "description": "Marks the selected payment method as default and unsets previous default.",
                 "operationId": "f762c5a5474632c239f343223b68f16e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment method ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Default method updated"
@@ -1335,9 +1714,40 @@
                 "summary": "Remove payment method",
                 "description": "Soft-removes a payment method from client account by disabling it.",
                 "operationId": "fd70be2c550b8bf1b3511ed1d92f9165",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment method ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Payment method removed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/me": {
+            "get": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Get authenticated client full profile",
+                "description": "Returns authenticated client profile with active bookings and booking history in one response.",
+                "operationId": "45cdd7486434eaeb7a07bf25070d6ce1",
+                "responses": {
+                    "200": {
+                        "description": "Client full profile"
                     }
                 },
                 "security": [
@@ -1373,6 +1783,81 @@
                 "summary": "Update client profile",
                 "description": "Updates account details such as name, phone, date of birth, sex, and preferences.",
                 "operationId": "b65bf557ed086a7fe40100b336299ff5",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "description": "Client first name",
+                                        "type": "string",
+                                        "example": "Giorgi"
+                                    },
+                                    "last_name": {
+                                        "description": "Client last name",
+                                        "type": "string",
+                                        "example": "Gelashvili"
+                                    },
+                                    "email": {
+                                        "description": "Client email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "giorgi@example.com",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "description": "Client phone number",
+                                        "type": "string",
+                                        "example": "+995555123456",
+                                        "nullable": true
+                                    },
+                                    "date_of_birth": {
+                                        "description": "Date of birth (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1995-05-10",
+                                        "nullable": true
+                                    },
+                                    "sex": {
+                                        "description": "Client sex value",
+                                        "type": "string",
+                                        "enum": [
+                                            "male",
+                                            "female",
+                                            "other"
+                                        ],
+                                        "example": "male",
+                                        "nullable": true
+                                    },
+                                    "notification_preferences": {
+                                        "description": "Notification delivery preferences",
+                                        "properties": {
+                                            "text": {
+                                                "description": "Enable SMS/text notifications",
+                                                "type": "boolean",
+                                                "example": true
+                                            },
+                                            "voice": {
+                                                "description": "Enable voice call notifications",
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "push": {
+                                                "description": "Enable push notifications",
+                                                "type": "boolean",
+                                                "example": true
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Profile updated"
@@ -1400,10 +1885,12 @@
                             "schema": {
                                 "properties": {
                                     "selfie": {
+                                        "description": "Client selfie image file",
                                         "type": "string",
                                         "format": "binary"
                                     },
                                     "id_document": {
+                                        "description": "Government ID photo file",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -1473,6 +1960,17 @@
                 "summary": "Get real-time tracking for booking",
                 "description": "Returns latest security team location and booking status for client tracking screen.",
                 "operationId": "17e37b0368993a0075c4991d69b624b9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Tracking data"
@@ -1522,10 +2020,14 @@
                                 ],
                                 "properties": {
                                     "username": {
-                                        "type": "string"
+                                        "description": "Security personnel username",
+                                        "type": "string",
+                                        "example": "guard01"
                                     },
                                     "password": {
-                                        "type": "string"
+                                        "description": "Security personnel password",
+                                        "type": "string",
+                                        "example": "guard1234"
                                     }
                                 },
                                 "type": "object"
@@ -1560,6 +2062,58 @@
                 ]
             }
         },
+        "/api/security/change-password": {
+            "post": {
+                "tags": [
+                    "Security Personnel Auth"
+                ],
+                "summary": "Change security personnel password",
+                "description": "Changes authenticated security personnel password after validating current password.",
+                "operationId": "be5d0cd7ddb19672a7ccfc0a1e7bca0b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "description": "Current personnel password",
+                                        "type": "string",
+                                        "example": "old-password"
+                                    },
+                                    "new_password": {
+                                        "description": "New password (minimum 8 characters)",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    },
+                                    "new_password_confirmation": {
+                                        "description": "Repeat new password to confirm",
+                                        "type": "string",
+                                        "example": "new-strong-password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/security/orders/{id}/messages": {
             "get": {
                 "tags": [
@@ -1568,6 +2122,17 @@
                 "summary": "Get messages for order",
                 "description": "Returns chat thread for a security-assigned booking.",
                 "operationId": "24523dd23fc92aac1cf358f1764306ab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Messages"
@@ -1586,6 +2151,17 @@
                 "summary": "Send message",
                 "description": "Sends chat message from security personnel to client and broadcasts realtime event.",
                 "operationId": "863019cdc69494fa8b0e930969037dc0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1596,9 +2172,12 @@
                                 ],
                                 "properties": {
                                     "message": {
-                                        "type": "string"
+                                        "description": "Message content sent to client",
+                                        "type": "string",
+                                        "example": "Team arrived nearby."
                                     },
                                     "message_type": {
+                                        "description": "Message category used by chat UI",
                                         "type": "string",
                                         "default": "text",
                                         "enum": [
@@ -1673,6 +2252,17 @@
                 "summary": "Get order details",
                 "description": "Returns details of a specific assigned order including chat and latest location.",
                 "operationId": "c77612c4aa6dee92434bf7e018096aa1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Order details"
@@ -1693,16 +2283,31 @@
                 "summary": "Mark order as en route",
                 "description": "Transitions booking to ongoing state and starts live location tracking.",
                 "operationId": "6f5739f6d3fba488b7c091d3524fe747",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
                                     "latitude": {
-                                        "type": "number"
+                                        "description": "Current latitude of security personnel",
+                                        "type": "number",
+                                        "example": 41.71509999999999962483343551866710186004638671875
                                     },
                                     "longitude": {
-                                        "type": "number"
+                                        "description": "Current longitude of security personnel",
+                                        "type": "number",
+                                        "example": 44.827100000000001500666257925331592559814453125
                                     }
                                 },
                                 "type": "object"
@@ -1730,6 +2335,43 @@
                 "summary": "Mark order as arrived",
                 "description": "Transitions booking to arrived state and records latest team location.",
                 "operationId": "c9502b11546766ac4c0c9b86d5614c1b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "latitude",
+                                    "longitude"
+                                ],
+                                "properties": {
+                                    "latitude": {
+                                        "description": "Arrival latitude",
+                                        "type": "number",
+                                        "example": 41.71509999999999962483343551866710186004638671875
+                                    },
+                                    "longitude": {
+                                        "description": "Arrival longitude",
+                                        "type": "number",
+                                        "example": 44.827100000000001500666257925331592559814453125
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Status updated"
@@ -1750,6 +2392,17 @@
                 "summary": "Mark order as completed",
                 "description": "Transitions arrived booking to completed and frees team/personnel availability.",
                 "operationId": "81b5693565ed1cba99b038ab8219e712",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Booking completed"
@@ -1782,24 +2435,36 @@
                                 ],
                                 "properties": {
                                     "booking_id": {
-                                        "type": "integer"
+                                        "description": "Booking being tracked",
+                                        "type": "integer",
+                                        "example": 10
                                     },
                                     "latitude": {
-                                        "type": "number"
+                                        "description": "Current latitude",
+                                        "type": "number",
+                                        "example": 41.71509999999999962483343551866710186004638671875
                                     },
                                     "longitude": {
-                                        "type": "number"
+                                        "description": "Current longitude",
+                                        "type": "number",
+                                        "example": 44.827100000000001500666257925331592559814453125
                                     },
                                     "accuracy": {
+                                        "description": "GPS accuracy in meters",
                                         "type": "number",
+                                        "example": 5.20000000000000017763568394002504646778106689453125,
                                         "nullable": true
                                     },
                                     "speed": {
+                                        "description": "Speed in m/s",
                                         "type": "number",
+                                        "example": 11.4000000000000003552713678800500929355621337890625,
                                         "nullable": true
                                     },
                                     "heading": {
+                                        "description": "Heading in degrees (0-360)",
                                         "type": "number",
+                                        "example": 180,
                                         "nullable": true
                                     }
                                 },

@@ -48,6 +48,9 @@ class BookingController extends Controller
         description: "Returns full booking details for admin review and management.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Booking details")]
     )]
     public function show($id): JsonResponse
@@ -72,10 +75,13 @@ class BookingController extends Controller
             content: new OA\JsonContent(
                 required: ["security_team_id"],
                 properties: [
-                    new OA\Property(property: "security_team_id", type: "integer")
+                    new OA\Property(property: "security_team_id", type: "integer", description: "ID of available security team to assign", example: 3)
                 ]
             )
         ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Team assigned")]
     )]
     public function assignTeam(Request $request, $id): JsonResponse
@@ -117,6 +123,20 @@ class BookingController extends Controller
         description: "Updates editable booking attributes such as start time, duration, team, and notes.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Updated booking start date/time", example: "2026-03-10T12:00:00Z"),
+                    new OA\Property(property: "duration_hours", type: "integer", description: "Updated duration in hours", example: 4),
+                    new OA\Property(property: "security_team_id", type: "integer", description: "Reassign booking to another team", example: 2),
+                    new OA\Property(property: "admin_notes", type: "string", description: "Internal admin notes", example: "Client requested earlier arrival")
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 200, description: "Booking updated")]
     )]
     public function update(Request $request, $id): JsonResponse
@@ -145,6 +165,9 @@ class BookingController extends Controller
         description: "Completes booking from admin side and releases assigned team availability.",
         tags: ["Admin Bookings"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Booking completed")]
     )]
     public function complete($id): JsonResponse

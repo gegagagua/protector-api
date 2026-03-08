@@ -39,6 +39,7 @@ return [
         'cooldown_seconds' => (int) env('OTP_COOLDOWN_SECONDS', 30),
         'expire_minutes' => (int) env('OTP_EXPIRE_MINUTES', 5),
         'max_attempts' => (int) env('OTP_MAX_ATTEMPTS', 5),
+        'fixed_code' => env('OTP_FIXED_CODE', '1111'),
     ],
 
 ];

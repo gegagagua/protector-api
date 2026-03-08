@@ -13,7 +13,8 @@ class OtpService
 
     public function createAndSend(string $phone, string $type): string
     {
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $fixedCode = (string) config('services.otp.fixed_code', '');
+        $code = $fixedCode !== '' ? $fixedCode : str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
 
         OtpCode::where('phone', $phone)
             ->where('is_used', false)

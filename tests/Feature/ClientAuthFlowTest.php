@@ -11,15 +11,14 @@ class ClientAuthFlowTest extends TestCase
 
     public function test_client_registration_requires_name_and_surname_for_new_phone(): void
     {
-        $sendOtp = $this->postJson('/api/client/send-otp', [
+        $sendOtp = $this->postJson('/api/client/signup/send-otp', [
             'phone' => '+995555000111',
-            'type' => 'registration',
         ]);
 
         $sendOtp->assertOk();
         $otp = $sendOtp->json('debug_otp');
 
-        $verifyWithoutNames = $this->postJson('/api/client/verify-otp', [
+        $verifyWithoutNames = $this->postJson('/api/client/signup', [
             'phone' => '+995555000111',
             'code' => $otp,
         ]);
@@ -28,15 +27,14 @@ class ClientAuthFlowTest extends TestCase
 
         $this->travel(31)->seconds();
 
-        $otpResponse = $this->postJson('/api/client/send-otp', [
+        $otpResponse = $this->postJson('/api/client/signup/send-otp', [
             'phone' => '+995555000111',
-            'type' => 'registration',
         ]);
 
         $otpResponse->assertOk();
         $newOtp = $otpResponse->json('debug_otp');
 
-        $verify = $this->postJson('/api/client/verify-otp', [
+        $verify = $this->postJson('/api/client/signup', [
             'phone' => '+995555000111',
             'code' => $newOtp,
             'first_name' => 'Giorgi',

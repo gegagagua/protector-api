@@ -20,6 +20,9 @@ class ChatController extends Controller
         description: "Returns chat thread for a security-assigned booking.",
         tags: ["Security Personnel Chat"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Messages")]
     )]
     public function getMessages(Request $request, $id): JsonResponse
@@ -57,11 +60,14 @@ class ChatController extends Controller
             content: new OA\JsonContent(
                 required: ["message"],
                 properties: [
-                    new OA\Property(property: "message", type: "string"),
-                    new OA\Property(property: "message_type", type: "string", enum: ["text", "sos", "quick_response"], default: "text")
+                    new OA\Property(property: "message", type: "string", description: "Message content sent to client", example: "Team arrived nearby."),
+                    new OA\Property(property: "message_type", type: "string", description: "Message category used by chat UI", enum: ["text", "sos", "quick_response"], default: "text")
                 ]
             )
         ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Message sent")]
     )]
     public function sendMessage(Request $request, $id): JsonResponse

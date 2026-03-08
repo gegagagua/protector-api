@@ -80,6 +80,9 @@ class OrderController extends Controller
         description: "Returns details of a specific assigned order including chat and latest location.",
         tags: ["Security Personnel Orders"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Order details")]
     )]
     public function show(Request $request, $id): JsonResponse

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Client;
 
+use App\Events\PasswordChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\OtpCode;
@@ -19,39 +20,11 @@ class AuthController extends Controller
     {
     }
 
-    #[OA\Post(
-        path: "/api/client/send-otp",
-        summary: "Send OTP code to client phone",
-        description: "Issues and sends OTP code for client registration/login with cooldown and throttling.",
-        tags: ["Client Auth"],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["phone"],
-                properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
-                    new OA\Property(property: "type", type: "string", enum: ["registration", "login"], example: "login")
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "OTP sent successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "status", type: "string", example: "success"),
-                        new OA\Property(property: "message", type: "string", example: "OTP sent to your phone")
-                    ]
-                )
-            )
-        ]
-    )]
-    public function sendOtp(Request $request): JsonResponse
+    private function sendOtp(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
-            'type' => 'nullable|in:registration,login,verification',
+            'type' => 'nullable|in:registration,login',
         ]);
 
         $phone = $validated['phone'];
@@ -91,7 +64,7 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456")
+                    new OA\Property(property: "phone", type: "string", description: "Client phone in international format", example: "+995555123456")
                 ]
             )
         ),
@@ -117,7 +90,7 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456")
+                    new OA\Property(property: "phone", type: "string", description: "Existing client phone in international format", example: "+995555123456")
                 ]
             )
         ),
@@ -133,43 +106,11 @@ class AuthController extends Controller
         return $this->sendOtp($request);
     }
 
-    #[OA\Post(
-        path: "/api/client/verify-otp",
-        summary: "Verify OTP and authenticate client",
-        description: "Validates OTP, creates new client if needed, and returns sanctum access token.",
-        tags: ["Client Auth"],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["phone", "code"],
-                properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
-                    new OA\Property(property: "code", type: "string", example: "123456"),
-                    new OA\Property(property: "first_name", type: "string", example: "John", description: "Required for new registration (when user doesn't exist)"),
-                    new OA\Property(property: "last_name", type: "string", example: "Doe", description: "Required for new registration (when user doesn't exist)")
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Authentication successful",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "status", type: "string", example: "success"),
-                        new OA\Property(property: "token", type: "string"),
-                        new OA\Property(property: "client", type: "object")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Invalid OTP")
-        ]
-    )]
-    public function verifyOtp(Request $request): JsonResponse
+    private function verifyOtp(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'phone' => 'required|string',
-            'code' => 'required|string|size:6',
+            'code' => 'required|string|size:4',
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
         ]);
@@ -251,10 +192,10 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone", "code", "first_name", "last_name"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
-                    new OA\Property(property: "code", type: "string", example: "123456"),
-                    new OA\Property(property: "first_name", type: "string", example: "Giorgi"),
-                    new OA\Property(property: "last_name", type: "string", example: "Gelashvili")
+                    new OA\Property(property: "phone", type: "string", description: "Phone number that received OTP", example: "+995555123456"),
+                    new OA\Property(property: "code", type: "string", description: "OTP verification code", example: "1111"),
+                    new OA\Property(property: "first_name", type: "string", description: "Client first name", example: "Giorgi"),
+                    new OA\Property(property: "last_name", type: "string", description: "Client last name", example: "Gelashvili")
                 ]
             )
         ),
@@ -278,8 +219,8 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone", "code"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", example: "+995555123456"),
-                    new OA\Property(property: "code", type: "string", example: "123456")
+                    new OA\Property(property: "phone", type: "string", description: "Existing client phone number", example: "+995555123456"),
+                    new OA\Property(property: "code", type: "string", description: "OTP verification code", example: "1111")
                 ]
             )
         ),
@@ -313,6 +254,56 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Logged out successfully',
+        ]);
+    }
+
+    #[OA\Post(
+        path: "/api/client/change-password",
+        summary: "Change client password",
+        description: "Sets or changes authenticated client password. current_password is required only when password already exists.",
+        tags: ["Client Auth"],
+        security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["new_password", "new_password_confirmation"],
+                properties: [
+                    new OA\Property(property: "current_password", type: "string", nullable: true, description: "Required when client already has a password", example: "old-password"),
+                    new OA\Property(property: "new_password", type: "string", description: "New password (minimum 8 characters)", example: "new-strong-password"),
+                    new OA\Property(property: "new_password_confirmation", type: "string", description: "Repeat new password to confirm", example: "new-strong-password"),
+                ]
+            )
+        ),
+        responses: [new OA\Response(response: 200, description: "Password changed")]
+    )]
+    public function changePassword(Request $request): JsonResponse
+    {
+        /** @var Client $client */
+        $client = $request->user();
+        $hasPassword = !empty($client->password);
+
+        $rules = [
+            'new_password' => 'required|string|min:8|confirmed',
+            'current_password' => $hasPassword ? 'required|string' : 'nullable|string',
+        ];
+
+        $validated = $request->validate($rules);
+
+        if ($hasPassword && !Hash::check((string) $validated['current_password'], (string) $client->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Current password is incorrect.'],
+            ]);
+        }
+
+        $client->update([
+            'password' => $validated['new_password'],
+        ]);
+
+        event(new PasswordChanged('client', (int) $client->id, now()->toIso8601String()));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password changed successfully',
         ]);
     }
 }

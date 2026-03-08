@@ -38,6 +38,21 @@ class PaymentMethodController extends Controller
         description: "Adds a new card or mobile pay method for the authenticated client.",
         tags: ["Client Payments"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["type", "token"],
+                properties: [
+                    new OA\Property(property: "type", type: "string", description: "Payment method type", enum: ["card", "mobile_pay"], example: "card"),
+                    new OA\Property(property: "provider", type: "string", description: "Payment provider name", nullable: true, example: "Visa"),
+                    new OA\Property(property: "last_four", type: "string", description: "Last 4 digits of card", nullable: true, example: "4242"),
+                    new OA\Property(property: "card_holder_name", type: "string", description: "Card holder full name", nullable: true, example: "Giorgi Gelashvili"),
+                    new OA\Property(property: "token", type: "string", description: "Provider tokenized payment source", example: "pm_tok_123"),
+                    new OA\Property(property: "is_default", type: "boolean", description: "Marks method as default when true", example: true),
+                    new OA\Property(property: "metadata", type: "object", description: "Optional provider specific metadata", nullable: true)
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 201, description: "Payment method created")]
     )]
     public function store(Request $request): JsonResponse
@@ -73,6 +88,9 @@ class PaymentMethodController extends Controller
         description: "Marks the selected payment method as default and unsets previous default.",
         tags: ["Client Payments"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Payment method ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Default method updated")]
     )]
     public function setDefault(Request $request, int $id): JsonResponse
@@ -96,6 +114,9 @@ class PaymentMethodController extends Controller
         description: "Soft-removes a payment method from client account by disabling it.",
         tags: ["Client Payments"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Payment method ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Payment method removed")]
     )]
     public function destroy(Request $request, int $id): JsonResponse

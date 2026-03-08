@@ -39,14 +39,14 @@ Route::prefix('client')->group(function () {
     Route::post('/signin/send-otp', [ClientAuthController::class, 'sendSigninOtp'])->middleware('throttle:5,1');
     Route::post('/signup', [ClientAuthController::class, 'signup'])->middleware('throttle:10,1');
     Route::post('/signin', [ClientAuthController::class, 'signin'])->middleware('throttle:10,1');
-    Route::post('/send-otp', [ClientAuthController::class, 'sendOtp'])->middleware('throttle:5,1');
-    Route::post('/verify-otp', [ClientAuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
     
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:client,client'])->group(function () {
         Route::post('/logout', [ClientAuthController::class, 'logout']);
+        Route::post('/change-password', [ClientAuthController::class, 'changePassword']);
         
         // Profile
+        Route::get('/me', [ClientProfileController::class, 'me']);
         Route::get('/profile', [ClientProfileController::class, 'show']);
         Route::put('/profile', [ClientProfileController::class, 'update']);
         Route::post('/verification/upload', [ClientProfileController::class, 'uploadVerification']);
@@ -92,6 +92,7 @@ Route::prefix('security')->group(function () {
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:security,security'])->group(function () {
         Route::post('/logout', [SecurityAuthController::class, 'logout']);
+        Route::post('/change-password', [SecurityAuthController::class, 'changePassword']);
         
         // Orders
         Route::get('/orders', [SecurityOrderController::class, 'index']);
@@ -119,6 +120,7 @@ Route::prefix('admin')->group(function () {
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:admin,admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
+        Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
         
         // Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);

@@ -49,7 +49,7 @@ class BookingController extends Controller
                 description: "Available services",
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: "services", type: "array", items: new OA\Items(type: "object"))
+                        new OA\Property(property: "services", type: "array", description: "List of service definitions with pricing metadata", items: new OA\Items(type: "object"))
                     ]
                 )
             )
@@ -137,6 +137,17 @@ class BookingController extends Controller
         description: "Calculates estimated booking amount for selected service, guard count, and duration.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["service_type", "security_personnel_count", "duration_hours"],
+                properties: [
+                    new OA\Property(property: "service_type", type: "string", description: "Requested security service type", enum: ["armed", "unarmed"], example: "armed"),
+                    new OA\Property(property: "security_personnel_count", type: "integer", description: "Number of guards requested", example: 2),
+                    new OA\Property(property: "duration_hours", type: "integer", description: "Service duration in hours", example: 4)
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 200, description: "Quote calculated")]
     )]
     public function quote(Request $request): JsonResponse
@@ -176,17 +187,17 @@ class BookingController extends Controller
             content: new OA\JsonContent(
                 required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "start_time", "duration_hours", "booking_type"],
                 properties: [
-                    new OA\Property(property: "service_type", type: "string", enum: ["armed", "unarmed"]),
-                    new OA\Property(property: "security_personnel_count", type: "integer", example: 2),
-                    new OA\Property(property: "persons_to_protect_count", type: "integer", example: 1),
-                    new OA\Property(property: "vehicle_id", type: "integer", nullable: true),
-                    new OA\Property(property: "address", type: "string"),
-                    new OA\Property(property: "latitude", type: "number", format: "float", nullable: true),
-                    new OA\Property(property: "longitude", type: "number", format: "float", nullable: true),
-                    new OA\Property(property: "start_time", type: "string", format: "date-time"),
-                    new OA\Property(property: "duration_hours", type: "integer", example: 4),
-                    new OA\Property(property: "booking_type", type: "string", enum: ["immediate", "scheduled"]),
-                    new OA\Property(property: "persons", type: "array", items: new OA\Items(type: "object"))
+                    new OA\Property(property: "service_type", type: "string", description: "Security service type", enum: ["armed", "unarmed"]),
+                    new OA\Property(property: "security_personnel_count", type: "integer", description: "Requested number of guards", example: 2),
+                    new OA\Property(property: "persons_to_protect_count", type: "integer", description: "Count of protected persons", example: 1),
+                    new OA\Property(property: "vehicle_id", type: "integer", description: "Optional preferred vehicle ID", nullable: true),
+                    new OA\Property(property: "address", type: "string", description: "Service address", example: "Rustaveli Ave 10, Tbilisi"),
+                    new OA\Property(property: "latitude", type: "number", format: "float", description: "Address latitude", nullable: true, example: 41.7151),
+                    new OA\Property(property: "longitude", type: "number", format: "float", description: "Address longitude", nullable: true, example: 44.8271),
+                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Booking start datetime", example: "2026-03-10T12:00:00Z"),
+                    new OA\Property(property: "duration_hours", type: "integer", description: "Booking duration in hours", example: 4),
+                    new OA\Property(property: "booking_type", type: "string", description: "Immediate or scheduled booking", enum: ["immediate", "scheduled"]),
+                    new OA\Property(property: "persons", type: "array", description: "Optional list of persons to protect", items: new OA\Items(type: "object"))
                 ]
             )
         ),
@@ -355,6 +366,9 @@ class BookingController extends Controller
         description: "Returns full booking details with team, chat, payment, and rating data.",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [
             new OA\Response(response: 200, description: "Booking details"),
             new OA\Response(response: 404, description: "Booking not found")
@@ -382,10 +396,13 @@ class BookingController extends Controller
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "reason", type: "string", nullable: true)
+                    new OA\Property(property: "reason", type: "string", description: "Optional cancellation reason", nullable: true, example: "Plan changed")
                 ]
             )
         ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [
             new OA\Response(response: 200, description: "Booking cancelled"),
             new OA\Response(response: 403, description: "Cannot cancel booking")

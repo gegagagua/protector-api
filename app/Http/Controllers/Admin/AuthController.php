@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\PasswordChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
@@ -22,8 +24,8 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["username", "password"],
                 properties: [
-                    new OA\Property(property: "username", type: "string"),
-                    new OA\Property(property: "password", type: "string")
+                    new OA\Property(property: "username", type: "string", description: "Admin username", example: "admin"),
+                    new OA\Property(property: "password", type: "string", description: "Admin account password", example: "admin1234")
                 ]
             )
         ),
@@ -74,6 +76,53 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Logged out successfully',
+        ]);
+    }
+
+    #[OA\Post(
+        path: "/api/admin/change-password",
+        summary: "Change admin password",
+        description: "Changes authenticated admin password after validating current password.",
+        tags: ["Admin Auth"],
+        security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["current_password", "new_password", "new_password_confirmation"],
+                properties: [
+                    new OA\Property(property: "current_password", type: "string", description: "Current admin password", example: "old-password"),
+                    new OA\Property(property: "new_password", type: "string", description: "New password (minimum 8 characters)", example: "new-strong-password"),
+                    new OA\Property(property: "new_password_confirmation", type: "string", description: "Repeat new password to confirm", example: "new-strong-password"),
+                ]
+            )
+        ),
+        responses: [new OA\Response(response: 200, description: "Password changed")]
+    )]
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        /** @var Admin $admin */
+        $admin = $request->user();
+
+        if (!Hash::check($validated['current_password'], $admin->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Current password is incorrect.'],
+            ]);
+        }
+
+        $admin->update([
+            'password' => $validated['new_password'],
+        ]);
+
+        Event::dispatch(new PasswordChanged('admin', (int) $admin->id, now()->toIso8601String()));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password changed successfully',
         ]);
     }
 }

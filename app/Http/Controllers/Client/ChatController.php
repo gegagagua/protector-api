@@ -21,6 +21,9 @@ class ChatController extends Controller
         description: "Returns paginated chat messages for a client booking conversation.",
         tags: ["Client Chat"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Messages list")]
     )]
     public function getMessages(Request $request, int $id): JsonResponse
@@ -45,6 +48,19 @@ class ChatController extends Controller
         description: "Sends a message from client to assigned security personnel for a booking.",
         tags: ["Client Chat"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["message"],
+                properties: [
+                    new OA\Property(property: "message", type: "string", description: "Text body to send in chat", example: "Hello, where are you now?"),
+                    new OA\Property(property: "message_type", type: "string", description: "Type of message payload", enum: ["text", "quick_response"], example: "text")
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 201, description: "Message sent")]
     )]
     public function sendMessage(Request $request, int $id): JsonResponse
@@ -83,6 +99,10 @@ class ChatController extends Controller
         description: "Marks a booking chat message as read for the authenticated client.",
         tags: ["Client Chat"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "bookingId", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "messageId", description: "Message ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Message read status updated")]
     )]
     public function markRead(Request $request, int $bookingId, int $messageId): JsonResponse
@@ -108,6 +128,17 @@ class ChatController extends Controller
         description: "Sends an SOS alert from client to assigned security team and broadcasts realtime alert.",
         tags: ["Client Chat"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "message", type: "string", description: "Optional custom SOS message", example: "Emergency, need immediate help!")
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 200, description: "SOS sent")]
     )]
     public function triggerSos(Request $request, int $id): JsonResponse

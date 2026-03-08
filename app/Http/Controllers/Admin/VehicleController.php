@@ -38,15 +38,15 @@ class VehicleController extends Controller
             content: new OA\JsonContent(
                 required: ["title", "image_url", "license_plate", "vehicle_type"],
                 properties: [
-                    new OA\Property(property: "title", type: "string", example: "Cadillac Escalade"),
-                    new OA\Property(property: "image_url", type: "string", format: "uri", example: "https://example.com/vehicles/escalade.png"),
-                    new OA\Property(property: "make", type: "string", example: "Cadillac", nullable: true),
-                    new OA\Property(property: "model", type: "string", example: "Escalade", nullable: true),
-                    new OA\Property(property: "license_plate", type: "string", example: "SEC-2914"),
-                    new OA\Property(property: "color", type: "string", example: "Black", nullable: true),
-                    new OA\Property(property: "year", type: "integer", example: 2022, nullable: true),
-                    new OA\Property(property: "vehicle_type", type: "string", enum: ["sedan", "suv", "van", "motorcycle"], example: "suv"),
-                    new OA\Property(property: "description", type: "string", example: "VIP transport SUV", nullable: true)
+                    new OA\Property(property: "title", type: "string", description: "Human readable vehicle title", example: "Cadillac Escalade"),
+                    new OA\Property(property: "image_url", type: "string", format: "uri", description: "Public image URL of vehicle", example: "https://example.com/vehicles/escalade.png"),
+                    new OA\Property(property: "make", type: "string", description: "Vehicle manufacturer", example: "Cadillac", nullable: true),
+                    new OA\Property(property: "model", type: "string", description: "Vehicle model", example: "Escalade", nullable: true),
+                    new OA\Property(property: "license_plate", type: "string", description: "Unique license plate", example: "SEC-2914"),
+                    new OA\Property(property: "color", type: "string", description: "Vehicle color", example: "Black", nullable: true),
+                    new OA\Property(property: "year", type: "integer", description: "Production year", example: 2022, nullable: true),
+                    new OA\Property(property: "vehicle_type", type: "string", description: "Vehicle category used in booking", enum: ["sedan", "suv", "van", "motorcycle"], example: "suv"),
+                    new OA\Property(property: "description", type: "string", description: "Optional internal/admin notes", example: "VIP transport SUV", nullable: true)
                 ]
             )
         ),

@@ -26,11 +26,14 @@ class StatusController extends Controller
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "latitude", type: "number"),
-                    new OA\Property(property: "longitude", type: "number")
+                    new OA\Property(property: "latitude", type: "number", description: "Current latitude of security personnel", example: 41.7151),
+                    new OA\Property(property: "longitude", type: "number", description: "Current longitude of security personnel", example: 44.8271)
                 ]
             )
         ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Status updated")]
     )]
     public function enRoute(Request $request, $id): JsonResponse
@@ -79,6 +82,19 @@ class StatusController extends Controller
         description: "Transitions booking to arrived state and records latest team location.",
         tags: ["Security Personnel Status"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["latitude", "longitude"],
+                properties: [
+                    new OA\Property(property: "latitude", type: "number", description: "Arrival latitude", example: 41.7151),
+                    new OA\Property(property: "longitude", type: "number", description: "Arrival longitude", example: 44.8271)
+                ]
+            )
+        ),
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Status updated")]
     )]
     public function arrived(Request $request, $id): JsonResponse
@@ -124,6 +140,9 @@ class StatusController extends Controller
         description: "Transitions arrived booking to completed and frees team/personnel availability.",
         tags: ["Security Personnel Status"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Booking completed")]
     )]
     public function complete(Request $request, $id): JsonResponse
@@ -161,12 +180,12 @@ class StatusController extends Controller
             content: new OA\JsonContent(
                 required: ["booking_id", "latitude", "longitude"],
                 properties: [
-                    new OA\Property(property: "booking_id", type: "integer"),
-                    new OA\Property(property: "latitude", type: "number"),
-                    new OA\Property(property: "longitude", type: "number"),
-                    new OA\Property(property: "accuracy", type: "number", nullable: true),
-                    new OA\Property(property: "speed", type: "number", nullable: true),
-                    new OA\Property(property: "heading", type: "number", nullable: true)
+                    new OA\Property(property: "booking_id", type: "integer", description: "Booking being tracked", example: 10),
+                    new OA\Property(property: "latitude", type: "number", description: "Current latitude", example: 41.7151),
+                    new OA\Property(property: "longitude", type: "number", description: "Current longitude", example: 44.8271),
+                    new OA\Property(property: "accuracy", type: "number", description: "GPS accuracy in meters", nullable: true, example: 5.2),
+                    new OA\Property(property: "speed", type: "number", description: "Speed in m/s", nullable: true, example: 11.4),
+                    new OA\Property(property: "heading", type: "number", description: "Heading in degrees (0-360)", nullable: true, example: 180)
                 ]
             )
         ),

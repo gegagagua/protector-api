@@ -45,6 +45,18 @@ class PaymentController extends Controller
         description: "Charges selected payment method and marks booking payment status as paid on success.",
         tags: ["Client Payments"],
         security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["payment_method_id"],
+                properties: [
+                    new OA\Property(property: "payment_method_id", type: "integer", description: "Saved client payment method identifier", example: 1)
+                ]
+            )
+        ),
         responses: [
             new OA\Response(response: 200, description: "Booking paid"),
             new OA\Response(response: 422, description: "Invalid payment request")
