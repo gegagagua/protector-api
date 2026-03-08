@@ -39,6 +39,15 @@ Route::prefix('client')->group(function () {
     Route::post('/signin/send-otp', [ClientAuthController::class, 'sendSigninOtp'])->middleware('throttle:5,1');
     Route::post('/signup', [ClientAuthController::class, 'signup'])->middleware('throttle:10,1');
     Route::post('/signin', [ClientAuthController::class, 'signin'])->middleware('throttle:10,1');
+
+    // Public booking read endpoints
+    Route::get('/services', [ClientBookingController::class, 'getServices']);
+    Route::get('/vehicles', [ClientBookingController::class, 'getVehicles']);
+    Route::get('/wizard-config', [ClientBookingController::class, 'getWizardConfig']);
+    Route::get('/bookings', [ClientBookingController::class, 'index']);
+    Route::get('/bookings/active', [ClientBookingController::class, 'active']);
+    Route::get('/bookings/history', [ClientBookingController::class, 'history']);
+    Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
     
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:client,client'])->group(function () {
@@ -54,15 +63,8 @@ Route::prefix('client')->group(function () {
         Route::put('/notification-preferences', [ClientProfileController::class, 'updateNotificationPreferences']);
         
         // Bookings
-        Route::get('/services', [ClientBookingController::class, 'getServices']);
-        Route::get('/vehicles', [ClientBookingController::class, 'getVehicles']);
-        Route::get('/wizard-config', [ClientBookingController::class, 'getWizardConfig']);
         Route::post('/bookings/quote', [ClientBookingController::class, 'quote']);
-        Route::get('/bookings', [ClientBookingController::class, 'index']);
-        Route::get('/bookings/active', [ClientBookingController::class, 'active']);
-        Route::get('/bookings/history', [ClientBookingController::class, 'history']);
         Route::post('/bookings', [ClientBookingController::class, 'store']);
-        Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
         Route::post('/bookings/{id}/cancel', [ClientBookingController::class, 'cancel']);
         
         // Tracking

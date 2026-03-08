@@ -1009,12 +1009,7 @@
                     "200": {
                         "description": "Wizard configuration"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/client/bookings/quote": {
@@ -1081,16 +1076,31 @@
                 "summary": "Get client bookings",
                 "description": "Returns paginated bookings for authenticated client with optional status filter.",
                 "operationId": "22c1431b7874c26ec0445433d03dc9c3",
+                "parameters": [
+                    {
+                        "name": "client_id",
+                        "in": "query",
+                        "description": "Optional client ID filter when request is unauthenticated",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Optional booking status filter",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Bookings list"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "post": {
                 "tags": [
@@ -1211,16 +1221,22 @@
                 "summary": "Get active bookings",
                 "description": "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
                 "operationId": "9b412d87b833631c3afc2603a2ec9828",
+                "parameters": [
+                    {
+                        "name": "client_id",
+                        "in": "query",
+                        "description": "Optional client ID filter when request is unauthenticated",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Active bookings list"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/client/bookings/history": {
@@ -1231,16 +1247,22 @@
                 "summary": "Get booking history",
                 "description": "Returns completed and cancelled bookings with payment and rating details.",
                 "operationId": "a63fabe80d0dfe88e9ca3bd54edd13af",
+                "parameters": [
+                    {
+                        "name": "client_id",
+                        "in": "query",
+                        "description": "Optional client ID filter when request is unauthenticated",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Booking history list"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/client/bookings/{id}": {
@@ -1260,6 +1282,15 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "client_id",
+                        "in": "query",
+                        "description": "Optional owner client ID filter when request is unauthenticated",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -1269,12 +1300,7 @@
                     "404": {
                         "description": "Booking not found"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/client/bookings/{id}/cancel": {

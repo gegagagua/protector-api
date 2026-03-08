@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Client;
 use App\Models\Vehicle;
 use App\Services\Booking\BookingStateMachine;
 use App\Services\Payments\PaymentGateway;
@@ -36,6 +37,25 @@ class BookingController extends Controller
         $pricing = $this->pricingFor($serviceType);
 
         return (float) (($pricing['base_per_hour'] + ($pricing['base_per_personnel'] * $securityCount)) * $durationHours);
+    }
+
+    private function resolvedClientId(Request $request): ?int
+    {
+        $user = $request->user();
+        if ($user instanceof Client) {
+            return (int) $user->id;
+        }
+
+        $clientId = $request->query('client_id');
+        if ($clientId === null || $clientId === '') {
+            return null;
+        }
+
+        $validated = $request->validate([
+            'client_id' => 'integer|exists:clients,id',
+        ]);
+
+        return (int) $validated['client_id'];
     }
 
     #[OA\Get(
@@ -111,7 +131,6 @@ class BookingController extends Controller
         summary: "Get booking wizard config",
         description: "Returns UI constraints and option lists for booking flow steps.",
         tags: ["Client Booking"],
-        security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Wizard configuration")]
     )]
     public function getWizardConfig(): JsonResponse
@@ -290,17 +309,25 @@ class BookingController extends Controller
         summary: "Get client bookings",
         description: "Returns paginated bookings for authenticated client with optional status filter.",
         tags: ["Client Booking"],
-        security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "status", description: "Optional booking status filter", in: "query", required: false, schema: new OA\Schema(type: "string"))
+        ],
         responses: [
             new OA\Response(response: 200, description: "Bookings list")
         ]
     )]
     public function index(Request $request): JsonResponse
     {
-        $client = $request->user();
+        $clientId = $this->resolvedClientId($request);
         $status = $request->query('status');
 
-        $query = $client->bookings()->with(['securityTeam', 'vehicle', 'rating']);
+        $query = Booking::query()
+            ->with(['securityTeam', 'vehicle', 'rating']);
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -319,17 +346,24 @@ class BookingController extends Controller
         summary: "Get active bookings",
         description: "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
         tags: ["Client Booking"],
-        security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Active bookings list")]
     )]
     public function active(Request $request): JsonResponse
     {
-        $client = $request->user();
-        $bookings = $client->bookings()
+        $clientId = $this->resolvedClientId($request);
+        $query = Booking::query()
             ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'arrived'])
             ->with(['securityTeam', 'vehicle'])
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
+
+        $bookings = $query->get();
 
         return response()->json([
             'status' => 'success',
@@ -342,17 +376,24 @@ class BookingController extends Controller
         summary: "Get booking history",
         description: "Returns completed and cancelled bookings with payment and rating details.",
         tags: ["Client Booking"],
-        security: [["sanctum" => []]],
+        parameters: [
+            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
+        ],
         responses: [new OA\Response(response: 200, description: "Booking history list")]
     )]
     public function history(Request $request): JsonResponse
     {
-        $client = $request->user();
-        $bookings = $client->bookings()
+        $clientId = $this->resolvedClientId($request);
+        $query = Booking::query()
             ->whereIn('status', ['completed', 'cancelled'])
             ->with(['securityTeam', 'vehicle', 'payments', 'rating'])
-            ->latest()
-            ->paginate(20);
+            ->latest();
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
+
+        $bookings = $query->paginate(20);
 
         return response()->json([
             'status' => 'success',
@@ -365,9 +406,9 @@ class BookingController extends Controller
         summary: "Get booking details",
         description: "Returns full booking details with team, chat, payment, and rating data.",
         tags: ["Client Booking"],
-        security: [["sanctum" => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "client_id", description: "Optional owner client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
         ],
         responses: [
             new OA\Response(response: 200, description: "Booking details"),
@@ -376,10 +417,16 @@ class BookingController extends Controller
     )]
     public function show(Request $request, $id): JsonResponse
     {
-        $client = $request->user();
-        $booking = $client->bookings()
+        $clientId = $this->resolvedClientId($request);
+        $query = Booking::query()
             ->with(['securityTeam.personnel', 'vehicle', 'bookingPersons', 'messages', 'payments', 'rating'])
-            ->findOrFail($id);
+            ->whereKey($id);
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
+
+        $booking = $query->firstOrFail();
 
         return response()->json([
             'status' => 'success',
