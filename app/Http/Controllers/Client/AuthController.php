@@ -20,14 +20,34 @@ class AuthController extends Controller
     {
     }
 
+    private function resolvePhone(array $validated): string
+    {
+        if (!empty($validated['phone'])) {
+            return (string) $validated['phone'];
+        }
+
+        $countryCode = ltrim((string) ($validated['country_code'] ?? ''), '+');
+        $nationalNumber = preg_replace('/\D+/', '', (string) ($validated['phone_national_number'] ?? ''));
+
+        return '+' . $countryCode . $nationalNumber;
+    }
+
     private function sendOtp(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
+            'phone' => 'nullable|string|regex:/^\+?[1-9]\d{1,14}$/',
+            'country_code' => 'nullable|string|regex:/^\+?[1-9]\d{0,3}$/',
+            'phone_national_number' => 'nullable|string|min:4|max:20',
             'type' => 'nullable|in:registration,login',
         ]);
 
-        $phone = $validated['phone'];
+        if (empty($validated['phone']) && (empty($validated['country_code']) || empty($validated['phone_national_number']))) {
+            throw ValidationException::withMessages([
+                'phone' => ['Provide either phone or country_code with phone_national_number.'],
+            ]);
+        }
+
+        $phone = $this->resolvePhone($validated);
         $type = $validated['type'] ?? 'login';
         $cooldownSeconds = (int) config('services.otp.cooldown_seconds', 30);
         $cooldownKey = "otp:cooldown:{$phone}";
@@ -64,7 +84,9 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", description: "Client phone in international format", example: "+995555123456")
+                    new OA\Property(property: "phone", type: "string", description: "Client phone in international format", example: "+995555123456"),
+                    new OA\Property(property: "country_code", type: "string", description: "Optional country dialing code (alternative input mode)", example: "+995"),
+                    new OA\Property(property: "phone_national_number", type: "string", description: "Optional local phone number without country code", example: "555123456")
                 ]
             )
         ),
@@ -76,6 +98,18 @@ class AuthController extends Controller
     public function sendSignupOtp(Request $request): JsonResponse
     {
         $request->merge(['type' => 'registration']);
+        $validated = $request->validate([
+            'phone' => 'nullable|string',
+            'country_code' => 'nullable|string',
+            'phone_national_number' => 'nullable|string',
+        ]);
+        $phone = $this->resolvePhone($validated);
+
+        if (Client::where('phone', $phone)->exists()) {
+            throw ValidationException::withMessages([
+                'phone' => ['User with this phone is already registered.'],
+            ]);
+        }
 
         return $this->sendOtp($request);
     }
@@ -90,7 +124,9 @@ class AuthController extends Controller
             content: new OA\JsonContent(
                 required: ["phone"],
                 properties: [
-                    new OA\Property(property: "phone", type: "string", description: "Existing client phone in international format", example: "+995555123456")
+                    new OA\Property(property: "phone", type: "string", description: "Existing client phone in international format", example: "+995555123456"),
+                    new OA\Property(property: "country_code", type: "string", description: "Optional country dialing code (alternative input mode)", example: "+995"),
+                    new OA\Property(property: "phone_national_number", type: "string", description: "Optional local phone number without country code", example: "555123456")
                 ]
             )
         ),
@@ -102,6 +138,18 @@ class AuthController extends Controller
     public function sendSigninOtp(Request $request): JsonResponse
     {
         $request->merge(['type' => 'login']);
+        $validated = $request->validate([
+            'phone' => 'nullable|string',
+            'country_code' => 'nullable|string',
+            'phone_national_number' => 'nullable|string',
+        ]);
+        $phone = $this->resolvePhone($validated);
+
+        if (!Client::where('phone', $phone)->exists()) {
+            throw ValidationException::withMessages([
+                'phone' => ['User with this phone is not registered.'],
+            ]);
+        }
 
         return $this->sendOtp($request);
     }
@@ -109,14 +157,22 @@ class AuthController extends Controller
     private function verifyOtp(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'phone' => 'required|string',
+            'phone' => 'nullable|string',
+            'country_code' => 'nullable|string|regex:/^\+?[1-9]\d{0,3}$/',
+            'phone_national_number' => 'nullable|string|min:4|max:20',
             'code' => 'required|string|size:4',
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
         ]);
+        if (empty($validated['phone']) && (empty($validated['country_code']) || empty($validated['phone_national_number']))) {
+            throw ValidationException::withMessages([
+                'phone' => ['Provide either phone or country_code with phone_national_number.'],
+            ]);
+        }
+        $phone = $this->resolvePhone($validated);
 
         $otp = OtpCode::valid()
-            ->forPhone($validated['phone'])
+            ->forPhone($phone)
             ->latest()
             ->first();
 
@@ -145,7 +201,7 @@ class AuthController extends Controller
         $otp->markAsUsed();
 
         // Find or create client
-        $client = Client::where('phone', $validated['phone'])->first();
+        $client = Client::where('phone', $phone)->first();
         $isNewUser = false;
 
         if (!$client) {
@@ -160,7 +216,7 @@ class AuthController extends Controller
             $client = Client::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
-                'phone' => $validated['phone'],
+                'phone' => $phone,
                 'phone_verified_at' => now(),
             ]);
             $isNewUser = true;
@@ -206,6 +262,18 @@ class AuthController extends Controller
     )]
     public function signup(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'phone' => 'nullable|string',
+            'country_code' => 'nullable|string',
+            'phone_national_number' => 'nullable|string',
+        ]);
+        $phone = $this->resolvePhone($validated);
+        if (Client::where('phone', $phone)->exists()) {
+            throw ValidationException::withMessages([
+                'phone' => ['User with this phone is already registered.'],
+            ]);
+        }
+
         return $this->verifyOtp($request);
     }
 
@@ -231,6 +299,18 @@ class AuthController extends Controller
     )]
     public function signin(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'phone' => 'nullable|string',
+            'country_code' => 'nullable|string',
+            'phone_national_number' => 'nullable|string',
+        ]);
+        $phone = $this->resolvePhone($validated);
+        if (!Client::where('phone', $phone)->exists()) {
+            throw ValidationException::withMessages([
+                'phone' => ['User with this phone is not registered.'],
+            ]);
+        }
+
         return $this->verifyOtp($request);
     }
 

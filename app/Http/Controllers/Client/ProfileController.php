@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class ProfileController extends Controller
@@ -19,6 +21,18 @@ class ProfileController extends Controller
         }
 
         return preg_replace('/\s+/', '', $phone);
+    }
+
+    private function buildPhoneFromParts(?string $countryCode, ?string $nationalNumber): ?string
+    {
+        if (!$countryCode || !$nationalNumber) {
+            return null;
+        }
+
+        $normalizedCode = '+' . ltrim($countryCode, '+');
+        $normalizedNational = preg_replace('/\D+/', '', $nationalNumber);
+
+        return $normalizedCode . $normalizedNational;
     }
 
     #[OA\Get(
@@ -112,6 +126,8 @@ class ProfileController extends Controller
             'last_name' => 'sometimes|string|max:255',
             'email' => 'sometimes|nullable|email|max:255',
             'phone' => 'sometimes|string|regex:/^\+?[1-9]\d{1,14}$/',
+            'phone_country_code' => 'sometimes|string|regex:/^\+?[1-9]\d{0,3}$/',
+            'phone_national_number' => 'sometimes|string|min:4|max:20',
             'date_of_birth' => 'sometimes|nullable|date|before:today',
             'sex' => 'sometimes|nullable|in:male,female,other',
             'notification_preferences' => 'sometimes|array',
@@ -124,12 +140,67 @@ class ProfileController extends Controller
             $validated['phone'] = $this->normalizePhone($validated['phone']);
         }
 
+        if (array_key_exists('phone_country_code', $validated) || array_key_exists('phone_national_number', $validated)) {
+            if (empty($validated['phone_country_code']) || empty($validated['phone_national_number'])) {
+                throw ValidationException::withMessages([
+                    'phone_country_code' => ['phone_country_code and phone_national_number must be sent together.'],
+                ]);
+            }
+
+            $validated['phone'] = $this->buildPhoneFromParts(
+                $validated['phone_country_code'],
+                $validated['phone_national_number']
+            );
+        }
+
         $client->update($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Profile updated successfully',
             'client' => $client->fresh(),
+        ]);
+    }
+
+    #[OA\Post(
+        path: "/api/client/profile/avatar",
+        summary: "Upload or replace profile avatar",
+        description: "Uploads client avatar image. Replaces previous avatar when it exists.",
+        tags: ["Client Profile"],
+        security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    required: ["avatar"],
+                    properties: [
+                        new OA\Property(property: "avatar", type: "string", format: "binary", description: "Avatar image file")
+                    ]
+                )
+            )
+        ),
+        responses: [new OA\Response(response: 200, description: "Avatar updated")]
+    )]
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $client = $request->user();
+        $validated = $request->validate([
+            'avatar' => 'required|image|max:5120',
+        ]);
+
+        if (!empty($client->avatar_path)) {
+            Storage::disk('public')->delete($client->avatar_path);
+        }
+
+        $avatarPath = $validated['avatar']->store('avatars/' . $client->id, 'public');
+        $client->update(['avatar_path' => $avatarPath]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Avatar updated successfully',
+            'avatar_url' => Storage::disk('public')->url($avatarPath),
+            'avatar_path' => $avatarPath,
         ]);
     }
 

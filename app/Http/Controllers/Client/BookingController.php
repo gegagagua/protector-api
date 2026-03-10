@@ -16,6 +16,30 @@ use OpenApi\Attributes as OA;
 
 class BookingController extends Controller
 {
+    private const GUARD_OUTFIT_IMAGES = [
+        'tactical' => 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
+        'formal' => 'https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?auto=format&fit=crop&w=800&q=80',
+        'casual' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80',
+    ];
+
+    private const STATUS_LABELS = [
+        'en' => [
+            'pending' => 'Pending',
+            'confirmed' => 'Confirmed',
+            'ongoing' => 'Ongoing',
+            'arrived' => 'Arrived',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+        ],
+        'ka' => [
+            'pending' => 'მოლოდინში',
+            'confirmed' => 'დადასტურებული',
+            'ongoing' => 'მიმდინარეობს',
+            'arrived' => 'ადგილზე მივიდა',
+            'completed' => 'დასრულებული',
+            'cancelled' => 'გაუქმებული',
+        ],
+    ];
     public function __construct(
         private readonly BookingStateMachine $stateMachine,
         private readonly PaymentGateway $paymentGateway
@@ -58,11 +82,52 @@ class BookingController extends Controller
         return (int) $validated['client_id'];
     }
 
+    private function localeFromRequest(Request $request): string
+    {
+        $language = strtolower((string) ($request->header('language') ?: $request->header('Accept-Language', 'en')));
+        return str_starts_with($language, 'ka') ? 'ka' : 'en';
+    }
+
+    private function extractOutfit(?string $adminNotes): ?string
+    {
+        if (!$adminNotes || !str_starts_with($adminNotes, 'outfit:')) {
+            return null;
+        }
+
+        return substr($adminNotes, 7) ?: null;
+    }
+
+    private function enrichBooking(Booking $booking, string $locale): array
+    {
+        $data = $booking->toArray();
+        $outfit = $this->extractOutfit($booking->admin_notes);
+        $status = (string) $booking->status;
+
+        $data['status_label'] = self::STATUS_LABELS[$locale][$status] ?? $status;
+        $data['guard_outfit'] = $outfit;
+        $data['guard_outfit_image_url'] = $outfit ? (self::GUARD_OUTFIT_IMAGES[$outfit] ?? null) : null;
+
+        return $data;
+    }
+
+    private function enrichCollection(iterable $bookings, string $locale): array
+    {
+        $result = [];
+        foreach ($bookings as $booking) {
+            $result[] = $this->enrichBooking($booking, $locale);
+        }
+
+        return $result;
+    }
+
     #[OA\Get(
         path: "/api/client/services",
         summary: "Get available services",
         description: "Returns security service catalog including pricing components.",
         tags: ["Client Booking"],
+        parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"]))
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -75,26 +140,46 @@ class BookingController extends Controller
             )
         ]
     )]
-    public function getServices(): JsonResponse
+    public function getServices(Request $request): JsonResponse
     {
-        $services = [
-            [
-                'type' => 'armed',
-                'name' => 'იარაღიანი დაცვა',
-                'description' => 'იარაღიანი დაცვის სერვისი',
-                'base_price_per_hour' => $this->pricingFor('armed')['base_per_hour'],
-                'base_price_per_personnel' => $this->pricingFor('armed')['base_per_personnel'],
-                'min_duration_hours' => 1,
-            ],
-            [
-                'type' => 'unarmed',
-                'name' => 'უიარაღო დაცვა',
-                'description' => 'უიარაღო დაცვის სერვისი',
-                'base_price_per_hour' => $this->pricingFor('unarmed')['base_per_hour'],
-                'base_price_per_personnel' => $this->pricingFor('unarmed')['base_per_personnel'],
-                'min_duration_hours' => 1,
-            ],
-        ];
+        $locale = $this->localeFromRequest($request);
+        $services = $locale === 'ka'
+            ? [
+                [
+                    'type' => 'armed',
+                    'name' => 'იარაღიანი დაცვა',
+                    'description' => 'იარაღიანი დაცვის სერვისი',
+                    'base_price_per_hour' => $this->pricingFor('armed')['base_per_hour'],
+                    'base_price_per_personnel' => $this->pricingFor('armed')['base_per_personnel'],
+                    'min_duration_hours' => 1,
+                ],
+                [
+                    'type' => 'unarmed',
+                    'name' => 'უიარაღო დაცვა',
+                    'description' => 'უიარაღო დაცვის სერვისი',
+                    'base_price_per_hour' => $this->pricingFor('unarmed')['base_per_hour'],
+                    'base_price_per_personnel' => $this->pricingFor('unarmed')['base_per_personnel'],
+                    'min_duration_hours' => 1,
+                ],
+            ]
+            : [
+                [
+                    'type' => 'armed',
+                    'name' => 'Armed Security',
+                    'description' => 'Armed security protection service.',
+                    'base_price_per_hour' => $this->pricingFor('armed')['base_per_hour'],
+                    'base_price_per_personnel' => $this->pricingFor('armed')['base_per_personnel'],
+                    'min_duration_hours' => 1,
+                ],
+                [
+                    'type' => 'unarmed',
+                    'name' => 'Unarmed Security',
+                    'description' => 'Unarmed security protection service.',
+                    'base_price_per_hour' => $this->pricingFor('unarmed')['base_per_hour'],
+                    'base_price_per_personnel' => $this->pricingFor('unarmed')['base_per_personnel'],
+                    'min_duration_hours' => 1,
+                ],
+            ];
 
         return response()->json([
             'status' => 'success',
@@ -107,6 +192,9 @@ class BookingController extends Controller
         summary: "Get available vehicles",
         description: "Returns currently available vehicles that can be selected during booking.",
         tags: ["Client Booking"],
+        parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"]))
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -117,7 +205,7 @@ class BookingController extends Controller
     public function getVehicles(): JsonResponse
     {
         $vehicles = Vehicle::available()
-            ->select('id', 'make', 'model', 'vehicle_type', 'color')
+            ->select('id', 'make', 'model', 'vehicle_type', 'color', 'image_url')
             ->get();
 
         return response()->json([
@@ -131,10 +219,15 @@ class BookingController extends Controller
         summary: "Get booking wizard config",
         description: "Returns UI constraints and option lists for booking flow steps.",
         tags: ["Client Booking"],
+        parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"]))
+        ],
         responses: [new OA\Response(response: 200, description: "Wizard configuration")]
     )]
-    public function getWizardConfig(): JsonResponse
+    public function getWizardConfig(Request $request): JsonResponse
     {
+        $locale = $this->localeFromRequest($request);
+
         return response()->json([
             'status' => 'success',
             'config' => [
@@ -144,8 +237,29 @@ class BookingController extends Controller
                 'max_security_personnel' => 10,
                 'min_duration_hours' => 1,
                 'max_duration_hours' => 24,
-                'outfits' => ['tactical', 'formal', 'casual'],
-                'booking_types' => ['immediate', 'scheduled'],
+                'min_schedule_notice_minutes' => 30,
+                'max_schedule_days_ahead' => 90,
+                'outfits' => [
+                    [
+                        'code' => 'tactical',
+                        'title' => $locale === 'ka' ? 'ტაქტიკური ფორმა' : 'Tactical outfit',
+                        'image_url' => self::GUARD_OUTFIT_IMAGES['tactical'],
+                    ],
+                    [
+                        'code' => 'formal',
+                        'title' => $locale === 'ka' ? 'ოფიციალური ფორმა' : 'Formal outfit',
+                        'image_url' => self::GUARD_OUTFIT_IMAGES['formal'],
+                    ],
+                    [
+                        'code' => 'casual',
+                        'title' => $locale === 'ka' ? 'ყოველდღიური ფორმა' : 'Casual outfit',
+                        'image_url' => self::GUARD_OUTFIT_IMAGES['casual'],
+                    ],
+                ],
+                'booking_types' => [
+                    ['code' => 'immediate', 'title' => $locale === 'ka' ? 'ახლავე' : 'Immediate'],
+                    ['code' => 'scheduled', 'title' => $locale === 'ka' ? 'დაგეგმილი' : 'Scheduled'],
+                ],
             ],
         ]);
     }
@@ -246,7 +360,7 @@ class BookingController extends Controller
             'address' => 'required|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'start_time' => 'required|date',
+            'start_time' => 'nullable|date',
             'duration_hours' => 'required|integer|min:1|max:24',
             'booking_type' => 'required|in:immediate,scheduled',
             'guard_outfit' => 'nullable|in:tactical,formal,casual',
@@ -262,7 +376,34 @@ class BookingController extends Controller
             (int) $validated['duration_hours']
         );
 
-        $booking = DB::transaction(function () use ($client, $validated, $totalAmount) {
+        if ($validated['booking_type'] === 'scheduled' && empty($validated['start_time'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'start_time is required for scheduled booking.',
+            ], 422);
+        }
+
+        $startAt = $validated['booking_type'] === 'immediate'
+            ? now()
+            : Carbon::parse($validated['start_time']);
+
+        if ($validated['booking_type'] === 'scheduled') {
+            if ($startAt->lt(now()->addMinutes(30))) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Scheduled booking must be at least 30 minutes in the future.',
+                ], 422);
+            }
+
+            if ($startAt->gt(now()->addDays(90))) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Scheduled booking cannot be more than 90 days ahead.',
+                ], 422);
+            }
+        }
+
+        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt) {
             $booking = Booking::create([
                 'client_id' => $client->id,
                 'service_type' => $validated['service_type'],
@@ -272,8 +413,8 @@ class BookingController extends Controller
                 'address' => $validated['address'],
                 'latitude' => $validated['latitude'] ?? null,
                 'longitude' => $validated['longitude'] ?? null,
-                'start_time' => $validated['start_time'],
-                'end_time' => Carbon::parse($validated['start_time'])->addHours((int) $validated['duration_hours']),
+                'start_time' => $startAt,
+                'end_time' => Carbon::parse($startAt)->addHours((int) $validated['duration_hours']),
                 'duration_hours' => $validated['duration_hours'],
                 'booking_type' => $validated['booking_type'],
                 'status' => 'pending',
@@ -297,10 +438,11 @@ class BookingController extends Controller
             return $booking->load(['bookingPersons', 'vehicle']);
         });
 
+        $locale = $this->localeFromRequest($request);
         return response()->json([
             'status' => 'success',
             'message' => 'Booking created successfully',
-            'booking' => $booking,
+            'booking' => $this->enrichBooking($booking, $locale),
         ], 201);
     }
 
@@ -310,6 +452,7 @@ class BookingController extends Controller
         description: "Returns paginated bookings for authenticated client with optional status filter.",
         tags: ["Client Booking"],
         parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
             new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer")),
             new OA\Parameter(name: "status", description: "Optional booking status filter", in: "query", required: false, schema: new OA\Schema(type: "string"))
         ],
@@ -319,6 +462,7 @@ class BookingController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        $locale = $this->localeFromRequest($request);
         $clientId = $this->resolvedClientId($request);
         $status = $request->query('status');
 
@@ -334,6 +478,8 @@ class BookingController extends Controller
         }
 
         $bookings = $query->latest()->paginate(15);
+        $items = $this->enrichCollection($bookings->items(), $locale);
+        $bookings->setCollection(collect($items));
 
         return response()->json([
             'status' => 'success',
@@ -347,12 +493,14 @@ class BookingController extends Controller
         description: "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
         tags: ["Client Booking"],
         parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
             new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
         ],
         responses: [new OA\Response(response: 200, description: "Active bookings list")]
     )]
     public function active(Request $request): JsonResponse
     {
+        $locale = $this->localeFromRequest($request);
         $clientId = $this->resolvedClientId($request);
         $query = Booking::query()
             ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'arrived'])
@@ -367,7 +515,7 @@ class BookingController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'bookings' => $bookings,
+            'bookings' => $this->enrichCollection($bookings, $locale),
         ]);
     }
 
@@ -377,12 +525,14 @@ class BookingController extends Controller
         description: "Returns completed and cancelled bookings with payment and rating details.",
         tags: ["Client Booking"],
         parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
             new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
         ],
         responses: [new OA\Response(response: 200, description: "Booking history list")]
     )]
     public function history(Request $request): JsonResponse
     {
+        $locale = $this->localeFromRequest($request);
         $clientId = $this->resolvedClientId($request);
         $query = Booking::query()
             ->whereIn('status', ['completed', 'cancelled'])
@@ -394,6 +544,8 @@ class BookingController extends Controller
         }
 
         $bookings = $query->paginate(20);
+        $items = $this->enrichCollection($bookings->items(), $locale);
+        $bookings->setCollection(collect($items));
 
         return response()->json([
             'status' => 'success',
@@ -407,6 +559,7 @@ class BookingController extends Controller
         description: "Returns full booking details with team, chat, payment, and rating data.",
         tags: ["Client Booking"],
         parameters: [
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
             new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
             new OA\Parameter(name: "client_id", description: "Optional owner client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
         ],
@@ -417,6 +570,7 @@ class BookingController extends Controller
     )]
     public function show(Request $request, $id): JsonResponse
     {
+        $locale = $this->localeFromRequest($request);
         $clientId = $this->resolvedClientId($request);
         $query = Booking::query()
             ->with(['securityTeam.personnel', 'vehicle', 'bookingPersons', 'messages', 'payments', 'rating'])
@@ -430,7 +584,7 @@ class BookingController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'booking' => $booking,
+            'booking' => $this->enrichBooking($booking, $locale),
         ]);
     }
 

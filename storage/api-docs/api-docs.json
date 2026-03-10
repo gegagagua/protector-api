@@ -724,6 +724,16 @@
                                         "description": "Client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
+                                    },
+                                    "country_code": {
+                                        "description": "Optional country dialing code (alternative input mode)",
+                                        "type": "string",
+                                        "example": "+995"
+                                    },
+                                    "phone_national_number": {
+                                        "description": "Optional local phone number without country code",
+                                        "type": "string",
+                                        "example": "555123456"
                                     }
                                 },
                                 "type": "object"
@@ -762,6 +772,16 @@
                                         "description": "Existing client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
+                                    },
+                                    "country_code": {
+                                        "description": "Optional country dialing code (alternative input mode)",
+                                        "type": "string",
+                                        "example": "+995"
+                                    },
+                                    "phone_national_number": {
+                                        "description": "Optional local phone number without country code",
+                                        "type": "string",
+                                        "example": "555123456"
                                     }
                                 },
                                 "type": "object"
@@ -959,6 +979,21 @@
                 "summary": "Get available services",
                 "description": "Returns security service catalog including pricing components.",
                 "operationId": "46bc1bfd137a9c81b092adda0a0c874b",
+                "parameters": [
+                    {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Available services",
@@ -990,6 +1025,21 @@
                 "summary": "Get available vehicles",
                 "description": "Returns currently available vehicles that can be selected during booking.",
                 "operationId": "c3df76150f452682e32cc5fce9474bad",
+                "parameters": [
+                    {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Available vehicles"
@@ -1005,6 +1055,21 @@
                 "summary": "Get booking wizard config",
                 "description": "Returns UI constraints and option lists for booking flow steps.",
                 "operationId": "6ac45d9c54781b8b97ed637373fe9177",
+                "parameters": [
+                    {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Wizard configuration"
@@ -1077,6 +1142,19 @@
                 "description": "Returns paginated bookings for authenticated client with optional status filter.",
                 "operationId": "22c1431b7874c26ec0445433d03dc9c3",
                 "parameters": [
+                    {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    },
                     {
                         "name": "client_id",
                         "in": "query",
@@ -1223,6 +1301,19 @@
                 "operationId": "9b412d87b833631c3afc2603a2ec9828",
                 "parameters": [
                     {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    },
+                    {
                         "name": "client_id",
                         "in": "query",
                         "description": "Optional client ID filter when request is unauthenticated",
@@ -1249,6 +1340,19 @@
                 "operationId": "a63fabe80d0dfe88e9ca3bd54edd13af",
                 "parameters": [
                     {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    },
+                    {
                         "name": "client_id",
                         "in": "query",
                         "description": "Optional client ID filter when request is unauthenticated",
@@ -1274,6 +1378,19 @@
                 "description": "Returns full booking details with team, chat, payment, and rating data.",
                 "operationId": "630eecff5d7866829da927faac3b5f73",
                 "parameters": [
+                    {
+                        "name": "language",
+                        "in": "header",
+                        "description": "Response language: ka or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ka",
+                                "en"
+                            ]
+                        }
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -1887,6 +2004,46 @@
                 "responses": {
                     "200": {
                         "description": "Profile updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/client/profile/avatar": {
+            "post": {
+                "tags": [
+                    "Client Profile"
+                ],
+                "summary": "Upload or replace profile avatar",
+                "description": "Uploads client avatar image. Replaces previous avatar when it exists.",
+                "operationId": "e7ab8abf2a2a6bfaad16b95b0b5ce623",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "avatar"
+                                ],
+                                "properties": {
+                                    "avatar": {
+                                        "description": "Avatar image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Avatar updated"
                     }
                 },
                 "security": [

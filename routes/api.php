@@ -58,6 +58,7 @@ Route::prefix('client')->group(function () {
         Route::get('/me', [ClientProfileController::class, 'me']);
         Route::get('/profile', [ClientProfileController::class, 'show']);
         Route::put('/profile', [ClientProfileController::class, 'update']);
+        Route::post('/profile/avatar', [ClientProfileController::class, 'uploadAvatar']);
         Route::post('/verification/upload', [ClientProfileController::class, 'uploadVerification']);
         Route::get('/verification/status', [ClientProfileController::class, 'verificationStatus']);
         Route::put('/notification-preferences', [ClientProfileController::class, 'updateNotificationPreferences']);
