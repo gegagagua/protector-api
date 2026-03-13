@@ -44,10 +44,6 @@ Route::prefix('client')->group(function () {
     Route::get('/services', [ClientBookingController::class, 'getServices']);
     Route::get('/vehicles', [ClientBookingController::class, 'getVehicles']);
     Route::get('/wizard-config', [ClientBookingController::class, 'getWizardConfig']);
-    Route::get('/bookings', [ClientBookingController::class, 'index']);
-    Route::get('/bookings/active', [ClientBookingController::class, 'active']);
-    Route::get('/bookings/history', [ClientBookingController::class, 'history']);
-    Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
     
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:client,client'])->group(function () {
@@ -65,7 +61,11 @@ Route::prefix('client')->group(function () {
         
         // Bookings
         Route::post('/bookings/quote', [ClientBookingController::class, 'quote']);
+        Route::get('/bookings', [ClientBookingController::class, 'index']);
+        Route::get('/bookings/active', [ClientBookingController::class, 'active']);
+        Route::get('/bookings/history', [ClientBookingController::class, 'history']);
         Route::post('/bookings', [ClientBookingController::class, 'store']);
+        Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
         Route::post('/bookings/{id}/cancel', [ClientBookingController::class, 'cancel']);
         
         // Tracking

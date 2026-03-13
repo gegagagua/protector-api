@@ -6,34 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class ProfileController extends Controller
 {
     private const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed', 'ongoing', 'arrived'];
     private const HISTORY_BOOKING_STATUSES = ['completed', 'cancelled'];
-
-    private function normalizePhone(?string $phone): ?string
-    {
-        if (!$phone) {
-            return null;
-        }
-
-        return preg_replace('/\s+/', '', $phone);
-    }
-
-    private function buildPhoneFromParts(?string $countryCode, ?string $nationalNumber): ?string
-    {
-        if (!$countryCode || !$nationalNumber) {
-            return null;
-        }
-
-        $normalizedCode = '+' . ltrim($countryCode, '+');
-        $normalizedNational = preg_replace('/\D+/', '', $nationalNumber);
-
-        return $normalizedCode . $normalizedNational;
-    }
 
     #[OA\Get(
         path: "/api/client/me",
@@ -88,7 +66,7 @@ class ProfileController extends Controller
     #[OA\Put(
         path: "/api/client/profile",
         summary: "Update client profile",
-        description: "Updates account details such as name, phone, date of birth, sex, and preferences.",
+        description: "Updates account details such as name, email, date of birth, and sex.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
@@ -98,20 +76,8 @@ class ProfileController extends Controller
                     new OA\Property(property: "first_name", type: "string", description: "Client first name", example: "Giorgi"),
                     new OA\Property(property: "last_name", type: "string", description: "Client last name", example: "Gelashvili"),
                     new OA\Property(property: "email", type: "string", format: "email", description: "Client email address", nullable: true, example: "giorgi@example.com"),
-                    new OA\Property(property: "phone", type: "string", description: "Client phone number", nullable: true, example: "+995555123456"),
                     new OA\Property(property: "date_of_birth", type: "string", format: "date", description: "Date of birth (YYYY-MM-DD)", nullable: true, example: "1995-05-10"),
-                    new OA\Property(property: "sex", type: "string", description: "Client sex value", nullable: true, enum: ["male", "female", "other"], example: "male"),
-                    new OA\Property(
-                        property: "notification_preferences",
-                        type: "object",
-                        description: "Notification delivery preferences",
-                        nullable: true,
-                        properties: [
-                            new OA\Property(property: "text", type: "boolean", description: "Enable SMS/text notifications", example: true),
-                            new OA\Property(property: "voice", type: "boolean", description: "Enable voice call notifications", example: false),
-                            new OA\Property(property: "push", type: "boolean", description: "Enable push notifications", example: true),
-                        ]
-                    ),
+                    new OA\Property(property: "sex", type: "string", description: "Client sex value", nullable: true, enum: ["male", "female", "other"], example: "male")
                 ]
             )
         ),
@@ -125,33 +91,16 @@ class ProfileController extends Controller
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'email' => 'sometimes|nullable|email|max:255',
-            'phone' => 'sometimes|string|regex:/^\+?[1-9]\d{1,14}$/',
-            'phone_country_code' => 'sometimes|string|regex:/^\+?[1-9]\d{0,3}$/',
-            'phone_national_number' => 'sometimes|string|min:4|max:20',
+            'phone' => 'prohibited',
+            'phone_country_code' => 'prohibited',
+            'phone_national_number' => 'prohibited',
             'date_of_birth' => 'sometimes|nullable|date|before:today',
             'sex' => 'sometimes|nullable|in:male,female,other',
-            'notification_preferences' => 'sometimes|array',
-            'notification_preferences.text' => 'nullable|boolean',
-            'notification_preferences.voice' => 'nullable|boolean',
-            'notification_preferences.push' => 'nullable|boolean',
+            'notification_preferences' => 'prohibited',
+            'notification_preferences.text' => 'prohibited',
+            'notification_preferences.voice' => 'prohibited',
+            'notification_preferences.push' => 'prohibited',
         ]);
-
-        if (array_key_exists('phone', $validated)) {
-            $validated['phone'] = $this->normalizePhone($validated['phone']);
-        }
-
-        if (array_key_exists('phone_country_code', $validated) || array_key_exists('phone_national_number', $validated)) {
-            if (empty($validated['phone_country_code']) || empty($validated['phone_national_number'])) {
-                throw ValidationException::withMessages([
-                    'phone_country_code' => ['phone_country_code and phone_national_number must be sent together.'],
-                ]);
-            }
-
-            $validated['phone'] = $this->buildPhoneFromParts(
-                $validated['phone_country_code'],
-                $validated['phone_national_number']
-            );
-        }
 
         $client->update($validated);
 
@@ -273,6 +222,16 @@ class ProfileController extends Controller
         description: "Updates notification settings for text, voice, and push channels.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "text", type: "boolean", description: "Enable text/SMS notifications", example: true),
+                    new OA\Property(property: "voice", type: "boolean", description: "Enable voice call notifications", example: false),
+                    new OA\Property(property: "push", type: "boolean", description: "Enable push notifications", example: true)
+                ]
+            )
+        ),
         responses: [new OA\Response(response: 200, description: "Notification preferences updated")]
     )]
     public function updateNotificationPreferences(Request $request): JsonResponse

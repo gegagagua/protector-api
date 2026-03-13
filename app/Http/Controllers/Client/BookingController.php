@@ -63,25 +63,6 @@ class BookingController extends Controller
         return (float) (($pricing['base_per_hour'] + ($pricing['base_per_personnel'] * $securityCount)) * $durationHours);
     }
 
-    private function resolvedClientId(Request $request): ?int
-    {
-        $user = $request->user();
-        if ($user instanceof Client) {
-            return (int) $user->id;
-        }
-
-        $clientId = $request->query('client_id');
-        if ($clientId === null || $clientId === '') {
-            return null;
-        }
-
-        $validated = $request->validate([
-            'client_id' => 'integer|exists:clients,id',
-        ]);
-
-        return (int) $validated['client_id'];
-    }
-
     private function localeFromRequest(Request $request): string
     {
         $language = strtolower((string) ($request->header('language') ?: $request->header('Accept-Language', 'en')));
@@ -318,19 +299,49 @@ class BookingController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "start_time", "duration_hours", "booking_type"],
+                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "duration_hours", "booking_type"],
                 properties: [
-                    new OA\Property(property: "service_type", type: "string", description: "Security service type", enum: ["armed", "unarmed"]),
-                    new OA\Property(property: "security_personnel_count", type: "integer", description: "Requested number of guards", example: 2),
-                    new OA\Property(property: "persons_to_protect_count", type: "integer", description: "Count of protected persons", example: 1),
-                    new OA\Property(property: "vehicle_id", type: "integer", description: "Optional preferred vehicle ID", nullable: true),
-                    new OA\Property(property: "address", type: "string", description: "Service address", example: "Rustaveli Ave 10, Tbilisi"),
-                    new OA\Property(property: "latitude", type: "number", format: "float", description: "Address latitude", nullable: true, example: 41.7151),
-                    new OA\Property(property: "longitude", type: "number", format: "float", description: "Address longitude", nullable: true, example: 44.8271),
-                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Booking start datetime", example: "2026-03-10T12:00:00Z"),
-                    new OA\Property(property: "duration_hours", type: "integer", description: "Booking duration in hours", example: 4),
-                    new OA\Property(property: "booking_type", type: "string", description: "Immediate or scheduled booking", enum: ["immediate", "scheduled"]),
-                    new OA\Property(property: "persons", type: "array", description: "Optional list of persons to protect", items: new OA\Items(type: "object"))
+                    new OA\Property(property: "service_type", type: "string", description: "Security service type.", enum: ["armed", "unarmed"], default: "unarmed", example: "armed"),
+                    new OA\Property(property: "security_personnel_count", type: "integer", description: "Requested number of guards.", minimum: 1, maximum: 10, default: 1, example: 2),
+                    new OA\Property(property: "persons_to_protect_count", type: "integer", description: "How many people are being protected.", minimum: 1, default: 1, example: 1),
+                    new OA\Property(property: "vehicle_id", type: "integer", description: "Optional preferred vehicle ID. Default is null (auto assignment).", nullable: true, default: null, example: 1),
+                    new OA\Property(property: "address", type: "string", description: "Service address/location.", example: "Rustaveli Ave 10, Tbilisi"),
+                    new OA\Property(property: "latitude", type: "number", format: "float", description: "Address latitude. Default is null.", nullable: true, default: null, example: 41.7151),
+                    new OA\Property(property: "longitude", type: "number", format: "float", description: "Address longitude. Default is null.", nullable: true, default: null, example: 44.8271),
+                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Required for scheduled booking. For immediate booking, server auto-uses current time.", example: "2026-03-20T12:00:00Z"),
+                    new OA\Property(property: "duration_hours", type: "integer", description: "Booking duration in hours.", minimum: 1, maximum: 24, default: 1, example: 4),
+                    new OA\Property(property: "booking_type", type: "string", description: "Booking execution type.", enum: ["immediate", "scheduled"], default: "immediate", example: "immediate"),
+                    new OA\Property(property: "guard_outfit", type: "string", description: "Preferred guard outfit. Default is null.", enum: ["tactical", "formal", "casual"], nullable: true, default: null, example: "formal"),
+                    new OA\Property(
+                        property: "persons",
+                        type: "array",
+                        description: "Optional persons details. If omitted/empty, server auto-adds authenticated client as first protected person.",
+                        default: [],
+                        items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: "name", type: "string", description: "Protected person's full name", example: "Gega Gagua"),
+                                new OA\Property(property: "phone", type: "string", description: "Protected person's phone", nullable: true, example: "+995555123456"),
+                                new OA\Property(property: "notes", type: "string", description: "Optional notes", nullable: true, example: "VIP client")
+                            ],
+                            type: "object"
+                        )
+                    )
+                ],
+                example: [
+                    "service_type" => "armed",
+                    "security_personnel_count" => 2,
+                    "persons_to_protect_count" => 1,
+                    "vehicle_id" => 1,
+                    "address" => "Rustaveli Ave 10, Tbilisi",
+                    "latitude" => 41.7151,
+                    "longitude" => 44.8271,
+                    "start_time" => "2026-03-20T12:00:00Z",
+                    "duration_hours" => 4,
+                    "booking_type" => "immediate",
+                    "guard_outfit" => "formal",
+                    "persons" => [
+                        ["name" => "Gega Gagua", "phone" => "+995555123456", "notes" => "VIP client"]
+                    ]
                 ]
             )
         ),
@@ -365,10 +376,39 @@ class BookingController extends Controller
             'booking_type' => 'required|in:immediate,scheduled',
             'guard_outfit' => 'nullable|in:tactical,formal,casual',
             'persons' => 'nullable|array',
-            'persons.*.name' => 'required|string|max:255',
+            'persons.*.name' => 'nullable|string|max:255',
             'persons.*.phone' => 'nullable|string',
             'persons.*.notes' => 'nullable|string',
         ]);
+
+        $persons = collect($validated['persons'] ?? [])
+            ->filter(function ($person) {
+                if (!is_array($person)) {
+                    return false;
+                }
+
+                return !empty($person['name']) || !empty($person['phone']) || !empty($person['notes']);
+            })
+            ->map(function (array $person): array {
+                return [
+                    'name' => isset($person['name']) ? trim((string) $person['name']) : null,
+                    'phone' => $person['phone'] ?? null,
+                    'notes' => $person['notes'] ?? null,
+                ];
+            })
+            ->filter(fn (array $person) => !empty($person['name']))
+            ->values()
+            ->all();
+
+        if (count($persons) === 0) {
+            $selfName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+
+            $persons = [[
+                'name' => $selfName !== '' ? $selfName : ('Client #' . $client->id),
+                'phone' => $client->phone ?? null,
+                'notes' => 'Auto-added from authenticated client profile.',
+            ]];
+        }
 
         $totalAmount = $this->calculatePrice(
             $validated['service_type'],
@@ -403,7 +443,7 @@ class BookingController extends Controller
             }
         }
 
-        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt) {
+        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt, $persons) {
             $booking = Booking::create([
                 'client_id' => $client->id,
                 'service_type' => $validated['service_type'],
@@ -425,14 +465,12 @@ class BookingController extends Controller
             ]);
 
             // Add persons to protect
-            if (!empty($validated['persons'])) {
-                foreach ($validated['persons'] as $person) {
-                    $booking->bookingPersons()->create([
-                        'name' => $person['name'],
-                        'phone' => $person['phone'] ?? null,
-                        'notes' => $person['notes'] ?? null,
-                    ]);
-                }
+            foreach ($persons as $person) {
+                $booking->bookingPersons()->create([
+                    'name' => $person['name'],
+                    'phone' => $person['phone'] ?? null,
+                    'notes' => $person['notes'] ?? null,
+                ]);
             }
 
             return $booking->load(['bookingPersons', 'vehicle']);
@@ -451,9 +489,9 @@ class BookingController extends Controller
         summary: "Get client bookings",
         description: "Returns paginated bookings for authenticated client with optional status filter.",
         tags: ["Client Booking"],
+        security: [["sanctum" => []]],
         parameters: [
             new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
-            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer")),
             new OA\Parameter(name: "status", description: "Optional booking status filter", in: "query", required: false, schema: new OA\Schema(type: "string"))
         ],
         responses: [
@@ -463,15 +501,10 @@ class BookingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $locale = $this->localeFromRequest($request);
-        $clientId = $this->resolvedClientId($request);
+        $client = $request->user();
         $status = $request->query('status');
 
-        $query = Booking::query()
-            ->with(['securityTeam', 'vehicle', 'rating']);
-
-        if ($clientId) {
-            $query->where('client_id', $clientId);
-        }
+        $query = $client->bookings()->with(['securityTeam', 'vehicle', 'rating']);
 
         if ($status) {
             $query->where('status', $status);
@@ -492,24 +525,20 @@ class BookingController extends Controller
         summary: "Get active bookings",
         description: "Returns active client bookings in pending/confirmed/ongoing/arrived states.",
         tags: ["Client Booking"],
+        security: [["sanctum" => []]],
         parameters: [
-            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
-            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"]))
         ],
         responses: [new OA\Response(response: 200, description: "Active bookings list")]
     )]
     public function active(Request $request): JsonResponse
     {
         $locale = $this->localeFromRequest($request);
-        $clientId = $this->resolvedClientId($request);
-        $query = Booking::query()
+        $client = $request->user();
+        $query = $client->bookings()
             ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'arrived'])
             ->with(['securityTeam', 'vehicle'])
             ->latest();
-
-        if ($clientId) {
-            $query->where('client_id', $clientId);
-        }
 
         $bookings = $query->get();
 
@@ -524,24 +553,20 @@ class BookingController extends Controller
         summary: "Get booking history",
         description: "Returns completed and cancelled bookings with payment and rating details.",
         tags: ["Client Booking"],
+        security: [["sanctum" => []]],
         parameters: [
-            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
-            new OA\Parameter(name: "client_id", description: "Optional client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"]))
         ],
         responses: [new OA\Response(response: 200, description: "Booking history list")]
     )]
     public function history(Request $request): JsonResponse
     {
         $locale = $this->localeFromRequest($request);
-        $clientId = $this->resolvedClientId($request);
-        $query = Booking::query()
+        $client = $request->user();
+        $query = $client->bookings()
             ->whereIn('status', ['completed', 'cancelled'])
             ->with(['securityTeam', 'vehicle', 'payments', 'rating'])
             ->latest();
-
-        if ($clientId) {
-            $query->where('client_id', $clientId);
-        }
 
         $bookings = $query->paginate(20);
         $items = $this->enrichCollection($bookings->items(), $locale);
@@ -558,10 +583,10 @@ class BookingController extends Controller
         summary: "Get booking details",
         description: "Returns full booking details with team, chat, payment, and rating data.",
         tags: ["Client Booking"],
+        security: [["sanctum" => []]],
         parameters: [
             new OA\Parameter(name: "language", description: "Response language: ka or en", in: "header", required: false, schema: new OA\Schema(type: "string", enum: ["ka", "en"])),
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "client_id", description: "Optional owner client ID filter when request is unauthenticated", in: "query", required: false, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
         ],
         responses: [
             new OA\Response(response: 200, description: "Booking details"),
@@ -571,14 +596,10 @@ class BookingController extends Controller
     public function show(Request $request, $id): JsonResponse
     {
         $locale = $this->localeFromRequest($request);
-        $clientId = $this->resolvedClientId($request);
-        $query = Booking::query()
+        $client = $request->user();
+        $query = $client->bookings()
             ->with(['securityTeam.personnel', 'vehicle', 'bookingPersons', 'messages', 'payments', 'rating'])
             ->whereKey($id);
-
-        if ($clientId) {
-            $query->where('client_id', $clientId);
-        }
 
         $booking = $query->firstOrFail();
 
@@ -612,7 +633,15 @@ class BookingController extends Controller
     public function cancel(Request $request, $id): JsonResponse
     {
         $client = $request->user();
-        $booking = $client->bookings()->findOrFail($id);
+        $booking = $client->bookings()->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'status' => 'error',
+                'code' => 404,
+                'message' => 'Booking not found for current client.',
+            ], 404);
+        }
 
         if (!$booking->canBeCancelled()) {
             return response()->json([

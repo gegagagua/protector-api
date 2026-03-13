@@ -724,16 +724,6 @@
                                         "description": "Client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
-                                    },
-                                    "country_code": {
-                                        "description": "Optional country dialing code (alternative input mode)",
-                                        "type": "string",
-                                        "example": "+995"
-                                    },
-                                    "phone_national_number": {
-                                        "description": "Optional local phone number without country code",
-                                        "type": "string",
-                                        "example": "555123456"
                                     }
                                 },
                                 "type": "object"
@@ -772,16 +762,6 @@
                                         "description": "Existing client phone in international format",
                                         "type": "string",
                                         "example": "+995555123456"
-                                    },
-                                    "country_code": {
-                                        "description": "Optional country dialing code (alternative input mode)",
-                                        "type": "string",
-                                        "example": "+995"
-                                    },
-                                    "phone_national_number": {
-                                        "description": "Optional local phone number without country code",
-                                        "type": "string",
-                                        "example": "555123456"
                                     }
                                 },
                                 "type": "object"
@@ -1156,15 +1136,6 @@
                         }
                     },
                     {
-                        "name": "client_id",
-                        "in": "query",
-                        "description": "Optional client ID filter when request is unauthenticated",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
                         "name": "status",
                         "in": "query",
                         "description": "Optional booking status filter",
@@ -1178,7 +1149,12 @@
                     "200": {
                         "description": "Bookings list"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
@@ -1197,81 +1173,148 @@
                                     "security_personnel_count",
                                     "persons_to_protect_count",
                                     "address",
-                                    "start_time",
                                     "duration_hours",
                                     "booking_type"
                                 ],
                                 "properties": {
                                     "service_type": {
-                                        "description": "Security service type",
+                                        "description": "Security service type.",
                                         "type": "string",
+                                        "default": "unarmed",
                                         "enum": [
                                             "armed",
                                             "unarmed"
-                                        ]
+                                        ],
+                                        "example": "armed"
                                     },
                                     "security_personnel_count": {
-                                        "description": "Requested number of guards",
+                                        "description": "Requested number of guards.",
                                         "type": "integer",
+                                        "default": 1,
+                                        "maximum": 10,
+                                        "minimum": 1,
                                         "example": 2
                                     },
                                     "persons_to_protect_count": {
-                                        "description": "Count of protected persons",
+                                        "description": "How many people are being protected.",
                                         "type": "integer",
+                                        "default": 1,
+                                        "minimum": 1,
                                         "example": 1
                                     },
                                     "vehicle_id": {
-                                        "description": "Optional preferred vehicle ID",
+                                        "description": "Optional preferred vehicle ID. Default is null (auto assignment).",
                                         "type": "integer",
+                                        "default": null,
+                                        "example": 1,
                                         "nullable": true
                                     },
                                     "address": {
-                                        "description": "Service address",
+                                        "description": "Service address/location.",
                                         "type": "string",
                                         "example": "Rustaveli Ave 10, Tbilisi"
                                     },
                                     "latitude": {
-                                        "description": "Address latitude",
+                                        "description": "Address latitude. Default is null.",
                                         "type": "number",
                                         "format": "float",
+                                        "default": null,
                                         "example": 41.71509999999999962483343551866710186004638671875,
                                         "nullable": true
                                     },
                                     "longitude": {
-                                        "description": "Address longitude",
+                                        "description": "Address longitude. Default is null.",
                                         "type": "number",
                                         "format": "float",
+                                        "default": null,
                                         "example": 44.827100000000001500666257925331592559814453125,
                                         "nullable": true
                                     },
                                     "start_time": {
-                                        "description": "Booking start datetime",
+                                        "description": "Required for scheduled booking. For immediate booking, server auto-uses current time.",
                                         "type": "string",
                                         "format": "date-time",
-                                        "example": "2026-03-10T12:00:00Z"
+                                        "example": "2026-03-20T12:00:00Z"
                                     },
                                     "duration_hours": {
-                                        "description": "Booking duration in hours",
+                                        "description": "Booking duration in hours.",
                                         "type": "integer",
+                                        "default": 1,
+                                        "maximum": 24,
+                                        "minimum": 1,
                                         "example": 4
                                     },
                                     "booking_type": {
-                                        "description": "Immediate or scheduled booking",
+                                        "description": "Booking execution type.",
                                         "type": "string",
+                                        "default": "immediate",
                                         "enum": [
                                             "immediate",
                                             "scheduled"
-                                        ]
+                                        ],
+                                        "example": "immediate"
+                                    },
+                                    "guard_outfit": {
+                                        "description": "Preferred guard outfit. Default is null.",
+                                        "type": "string",
+                                        "default": null,
+                                        "enum": [
+                                            "tactical",
+                                            "formal",
+                                            "casual"
+                                        ],
+                                        "example": "formal",
+                                        "nullable": true
                                     },
                                     "persons": {
-                                        "description": "Optional list of persons to protect",
+                                        "description": "Optional persons details. If omitted/empty, server auto-adds authenticated client as first protected person.",
                                         "type": "array",
                                         "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "description": "Protected person's full name",
+                                                    "type": "string",
+                                                    "example": "Gega Gagua"
+                                                },
+                                                "phone": {
+                                                    "description": "Protected person's phone",
+                                                    "type": "string",
+                                                    "example": "+995555123456",
+                                                    "nullable": true
+                                                },
+                                                "notes": {
+                                                    "description": "Optional notes",
+                                                    "type": "string",
+                                                    "example": "VIP client",
+                                                    "nullable": true
+                                                }
+                                            },
                                             "type": "object"
-                                        }
+                                        },
+                                        "default": []
                                     }
                                 },
                                 "type": "object"
+                            },
+                            "example": {
+                                "service_type": "armed",
+                                "security_personnel_count": 2,
+                                "persons_to_protect_count": 1,
+                                "vehicle_id": 1,
+                                "address": "Rustaveli Ave 10, Tbilisi",
+                                "latitude": 41.71509999999999962483343551866710186004638671875,
+                                "longitude": 44.827100000000001500666257925331592559814453125,
+                                "start_time": "2026-03-20T12:00:00Z",
+                                "duration_hours": 4,
+                                "booking_type": "immediate",
+                                "guard_outfit": "formal",
+                                "persons": [
+                                    {
+                                        "name": "Gega Gagua",
+                                        "phone": "+995555123456",
+                                        "notes": "VIP client"
+                                    }
+                                ]
                             }
                         }
                     }
@@ -1312,22 +1355,18 @@
                                 "en"
                             ]
                         }
-                    },
-                    {
-                        "name": "client_id",
-                        "in": "query",
-                        "description": "Optional client ID filter when request is unauthenticated",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Active bookings list"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/client/bookings/history": {
@@ -1351,22 +1390,18 @@
                                 "en"
                             ]
                         }
-                    },
-                    {
-                        "name": "client_id",
-                        "in": "query",
-                        "description": "Optional client ID filter when request is unauthenticated",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Booking history list"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/client/bookings/{id}": {
@@ -1399,15 +1434,6 @@
                         "schema": {
                             "type": "integer"
                         }
-                    },
-                    {
-                        "name": "client_id",
-                        "in": "query",
-                        "description": "Optional owner client ID filter when request is unauthenticated",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
                     }
                 ],
                 "responses": {
@@ -1417,7 +1443,12 @@
                     "404": {
                         "description": "Booking not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/client/bookings/{id}/cancel": {
@@ -1924,7 +1955,7 @@
                     "Client Profile"
                 ],
                 "summary": "Update client profile",
-                "description": "Updates account details such as name, phone, date of birth, sex, and preferences.",
+                "description": "Updates account details such as name, email, date of birth, and sex.",
                 "operationId": "b65bf557ed086a7fe40100b336299ff5",
                 "requestBody": {
                     "required": false,
@@ -1949,12 +1980,6 @@
                                         "example": "giorgi@example.com",
                                         "nullable": true
                                     },
-                                    "phone": {
-                                        "description": "Client phone number",
-                                        "type": "string",
-                                        "example": "+995555123456",
-                                        "nullable": true
-                                    },
                                     "date_of_birth": {
                                         "description": "Date of birth (YYYY-MM-DD)",
                                         "type": "string",
@@ -1971,28 +1996,6 @@
                                             "other"
                                         ],
                                         "example": "male",
-                                        "nullable": true
-                                    },
-                                    "notification_preferences": {
-                                        "description": "Notification delivery preferences",
-                                        "properties": {
-                                            "text": {
-                                                "description": "Enable SMS/text notifications",
-                                                "type": "boolean",
-                                                "example": true
-                                            },
-                                            "voice": {
-                                                "description": "Enable voice call notifications",
-                                                "type": "boolean",
-                                                "example": false
-                                            },
-                                            "push": {
-                                                "description": "Enable push notifications",
-                                                "type": "boolean",
-                                                "example": true
-                                            }
-                                        },
-                                        "type": "object",
                                         "nullable": true
                                     }
                                 },
@@ -2103,6 +2106,33 @@
                 "summary": "Update notification preferences",
                 "description": "Updates notification settings for text, voice, and push channels.",
                 "operationId": "1e65afecf49064cff91452e073095cd1",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "text": {
+                                        "description": "Enable text/SMS notifications",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "voice": {
+                                        "description": "Enable voice call notifications",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "push": {
+                                        "description": "Enable push notifications",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Notification preferences updated"
