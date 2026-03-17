@@ -6,11 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class Client extends Authenticatable
 {
     use HasFactory, SoftDeletes, HasApiTokens, Notifiable;
+
+    protected $appends = ['avatar_url', 'selfie_url', 'id_document_url'];
 
     protected $fillable = [
         'first_name',
@@ -96,5 +99,39 @@ class Client extends Authenticatable
     public function isVerified()
     {
         return $this->verification_status === 'verified';
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->toAbsolutePublicUrl($this->avatar_path);
+    }
+
+    public function getSelfieUrlAttribute(): ?string
+    {
+        return $this->toAbsolutePublicUrl($this->selfie_path);
+    }
+
+    public function getIdDocumentUrlAttribute(): ?string
+    {
+        return $this->toAbsolutePublicUrl($this->id_document_path);
+    }
+
+    private function toAbsolutePublicUrl(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        $url = Storage::disk('public')->url($path);
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        $base = request()?->getSchemeAndHttpHost() ?: rtrim((string) config('app.url', ''), '/');
+        if ($base === '') {
+            return $url;
+        }
+
+        return rtrim($base, '/') . '/' . ltrim($url, '/');
     }
 }

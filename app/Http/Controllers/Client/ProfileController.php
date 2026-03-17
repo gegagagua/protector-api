@@ -42,6 +42,7 @@ class ProfileController extends Controller
             'client' => $client,
             'active_bookings' => $activeBookings,
             'booking_history' => $bookingHistory,
+            'storage_base_url' => rtrim((string) config('app.url'), '/') . '/storage',
         ]);
     }
 
@@ -60,6 +61,7 @@ class ProfileController extends Controller
         return response()->json([
             'status' => 'success',
             'client' => $client,
+            'storage_base_url' => rtrim((string) config('app.url'), '/') . '/storage',
         ]);
     }
 
@@ -144,12 +146,14 @@ class ProfileController extends Controller
 
         $avatarPath = $validated['avatar']->store('avatars/' . $client->id, 'public');
         $client->update(['avatar_path' => $avatarPath]);
+        $client = $client->fresh();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Avatar updated successfully',
-            'avatar_url' => Storage::disk('public')->url($avatarPath),
-            'avatar_path' => $avatarPath,
+            'avatar_url' => $client->avatar_url,
+            'avatar_path' => $client->avatar_path,
+            'storage_base_url' => rtrim((string) config('app.url'), '/') . '/storage',
         ]);
     }
 
