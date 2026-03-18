@@ -2056,39 +2056,17 @@
                 ]
             }
         },
-        "/api/client/verification/upload": {
+        "/api/client/verification/verify": {
             "post": {
                 "tags": [
                     "Client Profile"
                 ],
-                "summary": "Upload verification documents",
-                "description": "Uploads selfie and ID document and switches verification status to pending review.",
-                "operationId": "a70dafaf341981fe88ffe8f68b2a6bf6",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "properties": {
-                                    "selfie": {
-                                        "description": "Client selfie image file",
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "id_document": {
-                                        "description": "Government ID photo file",
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
+                "summary": "Verify authenticated client",
+                "description": "Marks currently authenticated client as verified.",
+                "operationId": "f11a808c1b4843765222f3d445b51f63",
                 "responses": {
                     "200": {
-                        "description": "Documents uploaded"
+                        "description": "Client verified"
                     }
                 },
                 "security": [

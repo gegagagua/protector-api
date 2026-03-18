@@ -158,65 +158,27 @@ class ProfileController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/client/verification/upload",
-        summary: "Upload verification documents",
-        description: "Uploads selfie and ID document and switches verification status to pending review.",
+        path: "/api/client/verification/verify",
+        summary: "Verify authenticated client",
+        description: "Marks currently authenticated client as verified.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    properties: [
-                        new OA\Property(property: "selfie", type: "string", format: "binary", description: "Client selfie image file"),
-                        new OA\Property(property: "id_document", type: "string", format: "binary", description: "Government ID photo file")
-                    ]
-                )
-            )
-        ),
-        responses: [new OA\Response(response: 200, description: "Documents uploaded")]
+        responses: [new OA\Response(response: 200, description: "Client verified")]
     )]
-    public function uploadVerification(Request $request): JsonResponse
+    public function verify(Request $request): JsonResponse
     {
         $client = $request->user();
-        
-        $validated = $request->validate([
-            'selfie' => 'required|image|max:5120', // 5MB
-            'id_document' => 'required|image|max:5120',
-        ]);
-
-        $selfiePath = $request->file('selfie')->store('verifications/' . $client->id, 'public');
-        $idDocumentPath = $request->file('id_document')->store('verifications/' . $client->id, 'public');
 
         $client->update([
-            'selfie_path' => $selfiePath,
-            'id_document_path' => $idDocumentPath,
-            'verification_status' => 'pending',
-        ]);
-
-        // Create verification document records
-        $client->verificationDocuments()->createMany([
-            [
-                'document_type' => 'selfie',
-                'file_path' => $selfiePath,
-                'file_name' => $request->file('selfie')->getClientOriginalName(),
-                'mime_type' => $request->file('selfie')->getMimeType(),
-                'file_size' => $request->file('selfie')->getSize(),
-            ],
-            [
-                'document_type' => 'id_document',
-                'file_path' => $idDocumentPath,
-                'file_name' => $request->file('id_document')->getClientOriginalName(),
-                'mime_type' => $request->file('id_document')->getMimeType(),
-                'file_size' => $request->file('id_document')->getSize(),
-            ],
+            'verification_status' => 'verified',
+            'verification_rejection_reason' => null,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Verification documents uploaded successfully',
-            'verification_status' => 'pending',
+            'message' => 'Client verified successfully.',
+            'verification_status' => 'verified',
+            'client' => $client->fresh(),
         ]);
     }
 
