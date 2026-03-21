@@ -33,6 +33,9 @@ class BookingPaymentFlowTest extends TestCase
         $token = $client->createToken('client-auth', ['client'])->plainTextToken;
         $headers = ['Authorization' => 'Bearer ' . $token];
 
+        $start = now()->addHours(2);
+        $end = $start->copy()->addHours(4);
+
         $bookingResponse = $this->withHeaders($headers)->postJson('/api/client/bookings', [
             'service_type' => 'armed',
             'security_personnel_count' => 2,
@@ -41,8 +44,8 @@ class BookingPaymentFlowTest extends TestCase
             'address' => 'Tbilisi, Rustaveli Ave',
             'latitude' => 41.7151,
             'longitude' => 44.8271,
-            'start_time' => now()->addHour()->toISOString(),
-            'duration_hours' => 4,
+            'start_time' => $start->toIso8601String(),
+            'end_time' => $end->toIso8601String(),
             'booking_type' => 'scheduled',
         ]);
 

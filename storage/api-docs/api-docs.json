@@ -1063,7 +1063,7 @@
                     "Client Booking"
                 ],
                 "summary": "Calculate booking quote",
-                "description": "Calculates estimated booking amount for selected service, guard count, and duration.",
+                "description": "Calculates estimated booking amount from service, guard count, and time window (start_time to end_time).",
                 "operationId": "6d54cece0ceaa7d50da0c17baea52dd9",
                 "requestBody": {
                     "required": true,
@@ -1073,7 +1073,7 @@
                                 "required": [
                                     "service_type",
                                     "security_personnel_count",
-                                    "duration_hours"
+                                    "end_time"
                                 ],
                                 "properties": {
                                     "service_type": {
@@ -1090,10 +1090,18 @@
                                         "type": "integer",
                                         "example": 2
                                     },
-                                    "duration_hours": {
-                                        "description": "Service duration in hours",
-                                        "type": "integer",
-                                        "example": 4
+                                    "start_time": {
+                                        "description": "Window start (defaults to now if omitted)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-03-20T12:00:00Z",
+                                        "nullable": true
+                                    },
+                                    "end_time": {
+                                        "description": "Service end time (must be 1–24 hours after start)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-03-20T16:00:00Z"
                                     }
                                 },
                                 "type": "object"
@@ -1173,7 +1181,7 @@
                                     "security_personnel_count",
                                     "persons_to_protect_count",
                                     "address",
-                                    "duration_hours",
+                                    "end_time",
                                     "booking_type"
                                 ],
                                 "properties": {
@@ -1236,13 +1244,11 @@
                                         "format": "date-time",
                                         "example": "2026-03-20T12:00:00Z"
                                     },
-                                    "duration_hours": {
-                                        "description": "Booking duration in hours.",
-                                        "type": "integer",
-                                        "default": 1,
-                                        "maximum": 24,
-                                        "minimum": 1,
-                                        "example": 4
+                                    "end_time": {
+                                        "description": "Service end time (must be 1–24 hours after booking start).",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-03-20T16:00:00Z"
                                     },
                                     "booking_type": {
                                         "description": "Booking execution type.",
@@ -1305,7 +1311,7 @@
                                 "latitude": 41.71509999999999962483343551866710186004638671875,
                                 "longitude": 44.827100000000001500666257925331592559814453125,
                                 "start_time": "2026-03-20T12:00:00Z",
-                                "duration_hours": 4,
+                                "end_time": "2026-03-20T16:00:00Z",
                                 "booking_type": "immediate",
                                 "guard_outfit": "formal",
                                 "persons": [
@@ -1917,7 +1923,7 @@
                     "Client Profile"
                 ],
                 "summary": "Get authenticated client full profile",
-                "description": "Returns authenticated client profile with active bookings and booking history in one response.",
+                "description": "Returns authenticated client profile with a stable JSON shape (all client fields always present; verification_status defaults to pending when unset), plus active bookings and booking history.",
                 "operationId": "45cdd7486434eaeb7a07bf25070d6ce1",
                 "responses": {
                     "200": {

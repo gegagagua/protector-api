@@ -56,11 +56,41 @@ class BookingController extends Controller
         return ['base_per_hour' => 70, 'base_per_personnel' => 40];
     }
 
-    private function calculatePrice(string $serviceType, int $securityCount, int $durationHours): float
+    private function calculatePrice(string $serviceType, int $securityCount, float $durationHours): float
     {
         $pricing = $this->pricingFor($serviceType);
 
         return (float) (($pricing['base_per_hour'] + ($pricing['base_per_personnel'] * $securityCount)) * $durationHours);
+    }
+
+    /**
+     * Validates end_time vs start and returns fractional hours in (1, 24], or JSON error response.
+     */
+    private function validateEndTimeWindow(Carbon $startAt, Carbon $endAt): JsonResponse|float
+    {
+        if ($endAt->lte($startAt)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'end_time must be after start_time.',
+            ], 422);
+        }
+
+        $minutes = $startAt->diffInMinutes($endAt);
+        if ($minutes < 60) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'end_time must be at least 1 hour after the booking start.',
+            ], 422);
+        }
+
+        if ($minutes > 24 * 60) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Booking duration cannot exceed 24 hours.',
+            ], 422);
+        }
+
+        return $minutes / 60;
     }
 
     private function localeFromRequest(Request $request): string
@@ -248,17 +278,18 @@ class BookingController extends Controller
     #[OA\Post(
         path: "/api/client/bookings/quote",
         summary: "Calculate booking quote",
-        description: "Calculates estimated booking amount for selected service, guard count, and duration.",
+        description: "Calculates estimated booking amount from service, guard count, and time window (start_time to end_time).",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["service_type", "security_personnel_count", "duration_hours"],
+                required: ["service_type", "security_personnel_count", "end_time"],
                 properties: [
                     new OA\Property(property: "service_type", type: "string", description: "Requested security service type", enum: ["armed", "unarmed"], example: "armed"),
                     new OA\Property(property: "security_personnel_count", type: "integer", description: "Number of guards requested", example: 2),
-                    new OA\Property(property: "duration_hours", type: "integer", description: "Service duration in hours", example: 4)
+                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Window start (defaults to now if omitted)", nullable: true, example: "2026-03-20T12:00:00Z"),
+                    new OA\Property(property: "end_time", type: "string", format: "date-time", description: "Service end time (must be 1–24 hours after start)", example: "2026-03-20T16:00:00Z")
                 ]
             )
         ),
@@ -269,13 +300,24 @@ class BookingController extends Controller
         $validated = $request->validate([
             'service_type' => 'required|in:armed,unarmed',
             'security_personnel_count' => 'required|integer|min:1|max:10',
-            'duration_hours' => 'required|integer|min:1|max:24',
+            'start_time' => 'nullable|date',
+            'end_time' => 'required|date',
         ]);
+
+        $startAt = isset($validated['start_time'])
+            ? Carbon::parse($validated['start_time'])
+            : now();
+        $endAt = Carbon::parse($validated['end_time']);
+
+        $hoursFloat = $this->validateEndTimeWindow($startAt, $endAt);
+        if ($hoursFloat instanceof JsonResponse) {
+            return $hoursFloat;
+        }
 
         $amount = $this->calculatePrice(
             $validated['service_type'],
             (int) $validated['security_personnel_count'],
-            (int) $validated['duration_hours']
+            $hoursFloat
         );
 
         return response()->json([
@@ -285,7 +327,9 @@ class BookingController extends Controller
                 'amount' => $amount,
                 'service_type' => $validated['service_type'],
                 'security_personnel_count' => (int) $validated['security_personnel_count'],
-                'duration_hours' => (int) $validated['duration_hours'],
+                'start_time' => $startAt->toIso8601String(),
+                'end_time' => $endAt->toIso8601String(),
+                'duration_hours' => round($hoursFloat, 4),
             ],
         ]);
     }
@@ -299,7 +343,7 @@ class BookingController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "duration_hours", "booking_type"],
+                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "end_time", "booking_type"],
                 properties: [
                     new OA\Property(property: "service_type", type: "string", description: "Security service type.", enum: ["armed", "unarmed"], default: "unarmed", example: "armed"),
                     new OA\Property(property: "security_personnel_count", type: "integer", description: "Requested number of guards.", minimum: 1, maximum: 10, default: 1, example: 2),
@@ -309,7 +353,7 @@ class BookingController extends Controller
                     new OA\Property(property: "latitude", type: "number", format: "float", description: "Address latitude. Default is null.", nullable: true, default: null, example: 41.7151),
                     new OA\Property(property: "longitude", type: "number", format: "float", description: "Address longitude. Default is null.", nullable: true, default: null, example: 44.8271),
                     new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Required for scheduled booking. For immediate booking, server auto-uses current time.", example: "2026-03-20T12:00:00Z"),
-                    new OA\Property(property: "duration_hours", type: "integer", description: "Booking duration in hours.", minimum: 1, maximum: 24, default: 1, example: 4),
+                    new OA\Property(property: "end_time", type: "string", format: "date-time", description: "Service end time (must be 1–24 hours after booking start).", example: "2026-03-20T16:00:00Z"),
                     new OA\Property(property: "booking_type", type: "string", description: "Booking execution type.", enum: ["immediate", "scheduled"], default: "immediate", example: "immediate"),
                     new OA\Property(property: "guard_outfit", type: "string", description: "Preferred guard outfit. Default is null.", enum: ["tactical", "formal", "casual"], nullable: true, default: null, example: "formal"),
                     new OA\Property(
@@ -336,7 +380,7 @@ class BookingController extends Controller
                     "latitude" => 41.7151,
                     "longitude" => 44.8271,
                     "start_time" => "2026-03-20T12:00:00Z",
-                    "duration_hours" => 4,
+                    "end_time" => "2026-03-20T16:00:00Z",
                     "booking_type" => "immediate",
                     "guard_outfit" => "formal",
                     "persons" => [
@@ -372,7 +416,7 @@ class BookingController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'start_time' => 'nullable|date',
-            'duration_hours' => 'required|integer|min:1|max:24',
+            'end_time' => 'required|date',
             'booking_type' => 'required|in:immediate,scheduled',
             'guard_outfit' => 'nullable|in:tactical,formal,casual',
             'persons' => 'nullable|array',
@@ -410,12 +454,6 @@ class BookingController extends Controller
             ]];
         }
 
-        $totalAmount = $this->calculatePrice(
-            $validated['service_type'],
-            (int) $validated['security_personnel_count'],
-            (int) $validated['duration_hours']
-        );
-
         if ($validated['booking_type'] === 'scheduled' && empty($validated['start_time'])) {
             return response()->json([
                 'status' => 'error',
@@ -426,6 +464,8 @@ class BookingController extends Controller
         $startAt = $validated['booking_type'] === 'immediate'
             ? now()
             : Carbon::parse($validated['start_time']);
+
+        $endAt = Carbon::parse($validated['end_time']);
 
         if ($validated['booking_type'] === 'scheduled') {
             if ($startAt->lt(now()->addMinutes(30))) {
@@ -443,7 +483,20 @@ class BookingController extends Controller
             }
         }
 
-        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt, $persons) {
+        $hoursFloat = $this->validateEndTimeWindow($startAt, $endAt);
+        if ($hoursFloat instanceof JsonResponse) {
+            return $hoursFloat;
+        }
+
+        $totalAmount = $this->calculatePrice(
+            $validated['service_type'],
+            (int) $validated['security_personnel_count'],
+            $hoursFloat
+        );
+
+        $durationHoursStored = (int) max(1, min(24, (int) round($hoursFloat)));
+
+        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt, $endAt, $durationHoursStored, $persons) {
             $booking = Booking::create([
                 'client_id' => $client->id,
                 'service_type' => $validated['service_type'],
@@ -454,8 +507,8 @@ class BookingController extends Controller
                 'latitude' => $validated['latitude'] ?? null,
                 'longitude' => $validated['longitude'] ?? null,
                 'start_time' => $startAt,
-                'end_time' => Carbon::parse($startAt)->addHours((int) $validated['duration_hours']),
-                'duration_hours' => $validated['duration_hours'],
+                'end_time' => $endAt,
+                'duration_hours' => $durationHoursStored,
                 'booking_type' => $validated['booking_type'],
                 'status' => 'pending',
                 'total_amount' => $totalAmount,
