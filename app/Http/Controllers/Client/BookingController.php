@@ -268,8 +268,16 @@ class BookingController extends Controller
                     ],
                 ],
                 'booking_types' => [
-                    ['code' => 'immediate', 'title' => $locale === 'ka' ? 'ახლავე' : 'Immediate'],
-                    ['code' => 'scheduled', 'title' => $locale === 'ka' ? 'დაგეგმილი' : 'Scheduled'],
+                    [
+                        'code' => 'immediate',
+                        'title' => $locale === 'ka' ? 'ახლავე' : 'Immediate',
+                        'api_send_start_time' => false,
+                    ],
+                    [
+                        'code' => 'scheduled',
+                        'title' => $locale === 'ka' ? 'დაგეგმილი' : 'Scheduled',
+                        'api_send_start_time' => true,
+                    ],
                 ],
             ],
         ]);
@@ -337,13 +345,13 @@ class BookingController extends Controller
     #[OA\Post(
         path: "/api/client/bookings",
         summary: "Create a new booking",
-        description: "Creates a new booking request after verification checks and quote calculation.",
+        description: "Creates a new booking request after verification checks and quote calculation. Scheduling is inferred from start_time: omit it for immediate (starts now), send it for scheduled (≥30 minutes ahead).",
         tags: ["Client Booking"],
         security: [["sanctum" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "end_time", "booking_type"],
+                required: ["service_type", "security_personnel_count", "persons_to_protect_count", "address", "end_time"],
                 properties: [
                     new OA\Property(property: "service_type", type: "string", description: "Security service type.", enum: ["armed", "unarmed"], default: "unarmed", example: "armed"),
                     new OA\Property(property: "security_personnel_count", type: "integer", description: "Requested number of guards.", minimum: 1, maximum: 10, default: 1, example: 2),
@@ -352,9 +360,8 @@ class BookingController extends Controller
                     new OA\Property(property: "address", type: "string", description: "Service address/location.", example: "Rustaveli Ave 10, Tbilisi"),
                     new OA\Property(property: "latitude", type: "number", format: "float", description: "Address latitude. Default is null.", nullable: true, default: null, example: 41.7151),
                     new OA\Property(property: "longitude", type: "number", format: "float", description: "Address longitude. Default is null.", nullable: true, default: null, example: 44.8271),
-                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Required for scheduled booking. For immediate booking, server auto-uses current time.", example: "2026-03-20T12:00:00Z"),
+                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Omit or null = immediate (start is server now). Set = scheduled (must be ≥30 minutes in the future, within 90 days).", nullable: true, example: "2026-03-20T12:00:00Z"),
                     new OA\Property(property: "end_time", type: "string", format: "date-time", description: "Service end time (must be 1–24 hours after booking start).", example: "2026-03-20T16:00:00Z"),
-                    new OA\Property(property: "booking_type", type: "string", description: "Booking execution type.", enum: ["immediate", "scheduled"], default: "immediate", example: "immediate"),
                     new OA\Property(property: "guard_outfit", type: "string", description: "Preferred guard outfit. Default is null.", enum: ["tactical", "formal", "casual"], nullable: true, default: null, example: "formal"),
                     new OA\Property(
                         property: "persons",
@@ -381,7 +388,6 @@ class BookingController extends Controller
                     "longitude" => 44.8271,
                     "start_time" => "2026-03-20T12:00:00Z",
                     "end_time" => "2026-03-20T16:00:00Z",
-                    "booking_type" => "immediate",
                     "guard_outfit" => "formal",
                     "persons" => [
                         ["name" => "Gega Gagua", "phone" => "+995555123456", "notes" => "VIP client"]
@@ -417,7 +423,6 @@ class BookingController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'start_time' => 'nullable|date',
             'end_time' => 'required|date',
-            'booking_type' => 'required|in:immediate,scheduled',
             'guard_outfit' => 'nullable|in:tactical,formal,casual',
             'persons' => 'nullable|array',
             'persons.*.name' => 'nullable|string|max:255',
@@ -454,20 +459,15 @@ class BookingController extends Controller
             ]];
         }
 
-        if ($validated['booking_type'] === 'scheduled' && empty($validated['start_time'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'start_time is required for scheduled booking.',
-            ], 422);
-        }
+        $isScheduled = !empty($validated['start_time']);
 
-        $startAt = $validated['booking_type'] === 'immediate'
-            ? now()
-            : Carbon::parse($validated['start_time']);
+        $startAt = $isScheduled
+            ? Carbon::parse($validated['start_time'])
+            : now();
 
         $endAt = Carbon::parse($validated['end_time']);
 
-        if ($validated['booking_type'] === 'scheduled') {
+        if ($isScheduled) {
             if ($startAt->lt(now()->addMinutes(30))) {
                 return response()->json([
                     'status' => 'error',
@@ -496,7 +496,7 @@ class BookingController extends Controller
 
         $durationHoursStored = (int) max(1, min(24, (int) round($hoursFloat)));
 
-        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt, $endAt, $durationHoursStored, $persons) {
+        $booking = DB::transaction(function () use ($client, $validated, $totalAmount, $startAt, $endAt, $durationHoursStored, $persons, $isScheduled) {
             $booking = Booking::create([
                 'client_id' => $client->id,
                 'service_type' => $validated['service_type'],
@@ -509,7 +509,7 @@ class BookingController extends Controller
                 'start_time' => $startAt,
                 'end_time' => $endAt,
                 'duration_hours' => $durationHoursStored,
-                'booking_type' => $validated['booking_type'],
+                'booking_type' => $isScheduled ? 'scheduled' : 'immediate',
                 'status' => 'pending',
                 'total_amount' => $totalAmount,
                 'paid_amount' => 0,

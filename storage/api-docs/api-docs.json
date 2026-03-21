@@ -1169,7 +1169,7 @@
                     "Client Booking"
                 ],
                 "summary": "Create a new booking",
-                "description": "Creates a new booking request after verification checks and quote calculation.",
+                "description": "Creates a new booking request after verification checks and quote calculation. Scheduling is inferred from start_time: omit it for immediate (starts now), send it for scheduled (≥30 minutes ahead).",
                 "operationId": "547c361eb19e6fad360b8545bc7d68e6",
                 "requestBody": {
                     "required": true,
@@ -1181,8 +1181,7 @@
                                     "security_personnel_count",
                                     "persons_to_protect_count",
                                     "address",
-                                    "end_time",
-                                    "booking_type"
+                                    "end_time"
                                 ],
                                 "properties": {
                                     "service_type": {
@@ -1239,26 +1238,17 @@
                                         "nullable": true
                                     },
                                     "start_time": {
-                                        "description": "Required for scheduled booking. For immediate booking, server auto-uses current time.",
+                                        "description": "Omit or null = immediate (start is server now). Set = scheduled (must be ≥30 minutes in the future, within 90 days).",
                                         "type": "string",
                                         "format": "date-time",
-                                        "example": "2026-03-20T12:00:00Z"
+                                        "example": "2026-03-20T12:00:00Z",
+                                        "nullable": true
                                     },
                                     "end_time": {
                                         "description": "Service end time (must be 1–24 hours after booking start).",
                                         "type": "string",
                                         "format": "date-time",
                                         "example": "2026-03-20T16:00:00Z"
-                                    },
-                                    "booking_type": {
-                                        "description": "Booking execution type.",
-                                        "type": "string",
-                                        "default": "immediate",
-                                        "enum": [
-                                            "immediate",
-                                            "scheduled"
-                                        ],
-                                        "example": "immediate"
                                     },
                                     "guard_outfit": {
                                         "description": "Preferred guard outfit. Default is null.",
@@ -1312,7 +1302,6 @@
                                 "longitude": 44.827100000000001500666257925331592559814453125,
                                 "start_time": "2026-03-20T12:00:00Z",
                                 "end_time": "2026-03-20T16:00:00Z",
-                                "booking_type": "immediate",
                                 "guard_outfit": "formal",
                                 "persons": [
                                     {

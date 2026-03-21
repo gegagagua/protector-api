@@ -46,7 +46,6 @@ class BookingPaymentFlowTest extends TestCase
             'longitude' => 44.8271,
             'start_time' => $start->toIso8601String(),
             'end_time' => $end->toIso8601String(),
-            'booking_type' => 'scheduled',
         ]);
 
         $bookingResponse->assertCreated()->assertJsonPath('status', 'success');
