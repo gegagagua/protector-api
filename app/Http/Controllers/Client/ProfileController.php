@@ -16,7 +16,7 @@ class ProfileController extends Controller
     #[OA\Get(
         path: "/api/client/me",
         summary: "Get authenticated client full profile",
-        description: "Returns authenticated client profile with active bookings and booking history in one response.",
+        description: "Returns authenticated client profile with a stable JSON shape (all client fields always present; verification_status defaults to pending when unset), plus active bookings and booking history.",
         tags: ["Client Profile"],
         security: [["sanctum" => []]],
         responses: [new OA\Response(response: 200, description: "Client full profile")]
@@ -39,7 +39,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'client' => $client,
+            'client' => $client->toApiArray(),
             'active_bookings' => $activeBookings,
             'booking_history' => $bookingHistory,
             'storage_base_url' => rtrim((string) config('app.url'), '/') . '/storage',
@@ -57,10 +57,10 @@ class ProfileController extends Controller
     public function show(Request $request): JsonResponse
     {
         $client = $request->user()->load(['paymentMethods', 'verificationDocuments']);
-        
+
         return response()->json([
             'status' => 'success',
-            'client' => $client,
+            'client' => $client->toApiArray(),
             'storage_base_url' => rtrim((string) config('app.url'), '/') . '/storage',
         ]);
     }
@@ -109,7 +109,7 @@ class ProfileController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Profile updated successfully',
-            'client' => $client->fresh(),
+            'client' => $client->fresh()->toApiArray(),
         ]);
     }
 
@@ -178,7 +178,7 @@ class ProfileController extends Controller
             'status' => 'success',
             'message' => 'Client verified successfully.',
             'verification_status' => 'verified',
-            'client' => $client->fresh(),
+            'client' => $client->fresh()->toApiArray(),
         ]);
     }
 
@@ -236,11 +236,16 @@ class ProfileController extends Controller
     public function verificationStatus(Request $request): JsonResponse
     {
         $client = $request->user();
+        $v = $client->verification_status;
+        if ($v === null || $v === '') {
+            $v = 'pending';
+        }
 
         return response()->json([
             'status' => 'success',
             'verification' => [
-                'status' => $client->verification_status,
+                'status' => $v,
+                'is_verified' => $v === 'verified',
                 'rejection_reason' => $client->verification_rejection_reason,
                 'documents_uploaded' => !empty($client->selfie_path) && !empty($client->id_document_path),
             ],
