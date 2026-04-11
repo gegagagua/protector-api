@@ -13,10 +13,19 @@ class ClientController extends Controller
     #[OA\Get(
         path: "/api/admin/clients",
         summary: "Get all clients",
-        description: "Returns client list for admin with verification and activity details.",
-        tags: ["Admin Clients"],
+        description: "Returns paginated client list with booking/payment counts. Also listed under Admin Teams in documentation for admin operations hub.",
+        tags: ["Admin Teams", "Admin Clients"],
         security: [["sanctum" => []]],
-        responses: [new OA\Response(response: 200, description: "Clients list")]
+        parameters: [
+            new OA\Parameter(
+                name: "verification_status",
+                description: "Filter by client verification_status",
+                in: "query",
+                required: false,
+                schema: new OA\Schema(type: "string", enum: ["pending", "verified", "rejected"])
+            ),
+        ],
+        responses: [new OA\Response(response: 200, description: "Clients list (paginated)")]
     )]
     public function index(Request $request): JsonResponse
     {

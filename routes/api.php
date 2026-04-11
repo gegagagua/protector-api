@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\VehicleController as AdminVehicleController;
 use App\Http\Controllers\Admin\MonitoringController as AdminMonitoringController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\SecurityPersonnelController as AdminSecurityPersonnelController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -131,6 +132,7 @@ Route::prefix('admin')->group(function () {
         
         // Bookings
         Route::get('/bookings', [AdminBookingController::class, 'index']);
+        Route::get('/bookings/active', [AdminBookingController::class, 'active']);
         Route::get('/bookings/{id}', [AdminBookingController::class, 'show']);
         Route::post('/bookings/{id}/assign-team', [AdminBookingController::class, 'assignTeam']);
         Route::post('/bookings/{id}/complete', [AdminBookingController::class, 'complete']);
@@ -139,6 +141,12 @@ Route::prefix('admin')->group(function () {
         // Teams
         Route::get('/teams', [AdminTeamController::class, 'index']);
         Route::post('/teams', [AdminTeamController::class, 'store']);
+        Route::post('/teams/{team}/personnel', [AdminSecurityPersonnelController::class, 'storeForTeam']);
+
+        // Security personnel (CRUD for admin)
+        Route::get('/security-personnel', [AdminSecurityPersonnelController::class, 'index']);
+        Route::post('/security-personnel', [AdminSecurityPersonnelController::class, 'store']);
+        Route::put('/security-personnel/{id}', [AdminSecurityPersonnelController::class, 'update']);
         
         // Clients
         Route::get('/clients', [AdminClientController::class, 'index']);

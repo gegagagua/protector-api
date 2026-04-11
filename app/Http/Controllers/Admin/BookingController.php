@@ -12,8 +12,41 @@ use OpenApi\Attributes as OA;
 
 class BookingController extends Controller
 {
+    /** @var list<string> */
+    private const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed', 'ongoing', 'arrived'];
+
     public function __construct(private readonly BookingStateMachine $stateMachine)
     {
+    }
+
+    #[OA\Get(
+        path: "/api/admin/bookings/active",
+        summary: "Get active bookings",
+        description: "Returns all non-terminal bookings (pending, confirmed, ongoing, arrived) with full booking payload, assigned security team including personnel, client, vehicle, protected persons, recent messages, payments, and rating when present.",
+        tags: ["Admin Bookings"],
+        security: [["sanctum" => []]],
+        responses: [new OA\Response(response: 200, description: "Active bookings with team and relations")]
+    )]
+    public function active(): JsonResponse
+    {
+        $bookings = Booking::query()
+            ->whereIn('status', self::ACTIVE_BOOKING_STATUSES)
+            ->with([
+                'client',
+                'securityTeam.personnel',
+                'vehicle',
+                'bookingPersons',
+                'messages' => fn ($q) => $q->latest('created_at')->limit(100),
+                'payments',
+                'rating',
+            ])
+            ->latest('start_time')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'bookings' => $bookings,
+        ]);
     }
 
     #[OA\Get(

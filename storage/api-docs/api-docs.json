@@ -128,6 +128,26 @@
                 ]
             }
         },
+        "/api/admin/bookings/active": {
+            "get": {
+                "tags": [
+                    "Admin Bookings"
+                ],
+                "summary": "Get active bookings",
+                "description": "Returns all non-terminal bookings (pending, confirmed, ongoing, arrived) with full booking payload, assigned security team including personnel, client, vehicle, protected persons, recent messages, payments, and rating when present.",
+                "operationId": "4aaaaa5cf9344f0b9997a4b6df20f23e",
+                "responses": {
+                    "200": {
+                        "description": "Active bookings with team and relations"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/admin/bookings": {
             "get": {
                 "tags": [
@@ -326,14 +346,31 @@
         "/api/admin/clients": {
             "get": {
                 "tags": [
+                    "Admin Teams",
                     "Admin Clients"
                 ],
                 "summary": "Get all clients",
-                "description": "Returns client list for admin with verification and activity details.",
+                "description": "Returns paginated client list with booking/payment counts. Also listed under Admin Teams in documentation for admin operations hub.",
                 "operationId": "6f606ceba2fad5c8ee58c894625ffdd9",
+                "parameters": [
+                    {
+                        "name": "verification_status",
+                        "in": "query",
+                        "description": "Filter by client verification_status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "verified",
+                                "rejected"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Clients list"
+                        "description": "Clients list (paginated)"
                     }
                 },
                 "security": [
@@ -506,6 +543,308 @@
                 "responses": {
                     "200": {
                         "description": "Reports summary"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/security-personnel": {
+            "get": {
+                "tags": [
+                    "Admin Security Personnel"
+                ],
+                "summary": "List security personnel",
+                "description": "Returns paginated security staff with optional filter by team.",
+                "operationId": "1d1e736b53311f1eb26cb492bd479eaa",
+                "parameters": [
+                    {
+                        "name": "team_id",
+                        "in": "query",
+                        "description": "Filter by security_team_id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Personnel list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Security Personnel"
+                ],
+                "summary": "Create security personnel",
+                "description": "Creates a new security account (login). Password is stored hashed. Default status is offline unless specified.",
+                "operationId": "135495b5ddb9dc6df18393b625c2a423",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "username",
+                                    "phone",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Giorgi"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Maisuradze"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "guard_new"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555770099"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "guard@proector.local",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "SecurePass1"
+                                    },
+                                    "security_team_id": {
+                                        "description": "Assign to team (optional)",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "available",
+                                            "busy",
+                                            "offline"
+                                        ],
+                                        "example": "offline",
+                                        "nullable": true
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Personnel created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/teams/{team}/personnel": {
+            "post": {
+                "tags": [
+                    "Admin Teams",
+                    "Admin Security Personnel"
+                ],
+                "summary": "Add security personnel to a team",
+                "description": "Creates a new security account and assigns it to the given team. Body is the same as POST /security-personnel except security_team_id must not be sent (it is taken from the URL).",
+                "operationId": "867fcf0e6503b749829656f36f5c189d",
+                "parameters": [
+                    {
+                        "name": "team",
+                        "in": "path",
+                        "description": "Security team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "username",
+                                    "phone",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Giorgi"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Maisuradze"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "guard_alpha_2"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995555770088"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "SecurePass1"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "available",
+                                            "busy",
+                                            "offline"
+                                        ],
+                                        "nullable": true
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Personnel created and linked to team"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/security-personnel/{id}": {
+            "put": {
+                "tags": [
+                    "Admin Security Personnel"
+                ],
+                "summary": "Update security personnel",
+                "description": "Updates profile fields, optional password, team assignment, operational status (available/busy/offline), and is_active.",
+                "operationId": "b54cb1407e253db02d17cfa4b2473a63",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Security personnel ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "description": "New password (omit to keep current)",
+                                        "type": "string",
+                                        "format": "password",
+                                        "nullable": true
+                                    },
+                                    "security_team_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "available",
+                                            "busy",
+                                            "offline"
+                                        ]
+                                    },
+                                    "is_active": {
+                                        "description": "Account can log in when true",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Personnel updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -2692,6 +3031,10 @@
             "description": "Admin Bookings"
         },
         {
+            "name": "Admin Teams",
+            "description": "Admin Teams"
+        },
+        {
             "name": "Admin Clients",
             "description": "Admin Clients"
         },
@@ -2712,8 +3055,8 @@
             "description": "Admin Reports"
         },
         {
-            "name": "Admin Teams",
-            "description": "Admin Teams"
+            "name": "Admin Security Personnel",
+            "description": "Admin Security Personnel"
         },
         {
             "name": "Admin Vehicles",
