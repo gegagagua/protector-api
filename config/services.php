@@ -42,4 +42,9 @@ return [
         'fixed_code' => env('OTP_FIXED_CODE', '1111'),
     ],
 
+    'socket' => [
+        'emit_url' => env('SOCKET_EMIT_URL'),
+        'secret' => env('SOCKET_INTERNAL_SECRET'),
+    ],
+
 ];

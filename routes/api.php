@@ -1,27 +1,29 @@
 <?php
 
-use App\Http\Controllers\Client\AuthController as ClientAuthController;
-use App\Http\Controllers\Client\ProfileController as ClientProfileController;
-use App\Http\Controllers\Client\BookingController as ClientBookingController;
-use App\Http\Controllers\Client\ChatController as ClientChatController;
-use App\Http\Controllers\Client\PaymentController as ClientPaymentController;
-use App\Http\Controllers\Client\PaymentMethodController as ClientPaymentMethodController;
-use App\Http\Controllers\Client\TrackingController as ClientTrackingController;
-use App\Http\Controllers\PaymentWebhookController;
-use App\Http\Controllers\SecurityPersonnel\AuthController as SecurityAuthController;
-use App\Http\Controllers\SecurityPersonnel\OrderController as SecurityOrderController;
-use App\Http\Controllers\SecurityPersonnel\StatusController as SecurityStatusController;
-use App\Http\Controllers\SecurityPersonnel\ChatController as SecurityChatController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\BookingChatController as AdminBookingChatController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
-use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
-use App\Http\Controllers\Admin\VehicleController as AdminVehicleController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\MonitoringController as AdminMonitoringController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SecurityPersonnelController as AdminSecurityPersonnelController;
+use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\TeamController as AdminTeamController;
+use App\Http\Controllers\Admin\VehicleController as AdminVehicleController;
+use App\Http\Controllers\Client\AuthController as ClientAuthController;
+use App\Http\Controllers\Client\BookingController as ClientBookingController;
+use App\Http\Controllers\Client\ChatController as ClientChatController;
+use App\Http\Controllers\Client\PaymentController as ClientPaymentController;
+use App\Http\Controllers\Client\PaymentMethodController as ClientPaymentMethodController;
+use App\Http\Controllers\Client\ProfileController as ClientProfileController;
+use App\Http\Controllers\Client\TrackingController as ClientTrackingController;
+use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\SecurityPersonnel\AuthController as SecurityAuthController;
+use App\Http\Controllers\SecurityPersonnel\ChatController as SecurityChatController;
+use App\Http\Controllers\SecurityPersonnel\OrderController as SecurityOrderController;
+use App\Http\Controllers\SecurityPersonnel\StatusController as SecurityStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,12 +47,12 @@ Route::prefix('client')->group(function () {
     Route::get('/services', [ClientBookingController::class, 'getServices']);
     Route::get('/vehicles', [ClientBookingController::class, 'getVehicles']);
     Route::get('/wizard-config', [ClientBookingController::class, 'getWizardConfig']);
-    
+
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:client,client'])->group(function () {
         Route::post('/logout', [ClientAuthController::class, 'logout']);
         Route::post('/change-password', [ClientAuthController::class, 'changePassword']);
-        
+
         // Profile
         Route::get('/me', [ClientProfileController::class, 'me']);
         Route::get('/profile', [ClientProfileController::class, 'show']);
@@ -59,7 +61,7 @@ Route::prefix('client')->group(function () {
         Route::post('/verification/verify', [ClientProfileController::class, 'verify']);
         Route::get('/verification/status', [ClientProfileController::class, 'verificationStatus']);
         Route::put('/notification-preferences', [ClientProfileController::class, 'updateNotificationPreferences']);
-        
+
         // Bookings
         Route::post('/bookings/quote', [ClientBookingController::class, 'quote']);
         Route::get('/bookings', [ClientBookingController::class, 'index']);
@@ -68,7 +70,7 @@ Route::prefix('client')->group(function () {
         Route::post('/bookings', [ClientBookingController::class, 'store']);
         Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
         Route::post('/bookings/{id}/cancel', [ClientBookingController::class, 'cancel']);
-        
+
         // Tracking
         Route::get('/bookings/{id}/tracking', [ClientTrackingController::class, 'getTracking']);
         Route::get('/bookings/{id}/messages', [ClientChatController::class, 'getMessages']);
@@ -92,23 +94,24 @@ Route::prefix('client')->group(function () {
 Route::prefix('security')->group(function () {
     // Authentication
     Route::post('/login', [SecurityAuthController::class, 'login']);
-    
+
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:security,security'])->group(function () {
         Route::post('/logout', [SecurityAuthController::class, 'logout']);
         Route::post('/change-password', [SecurityAuthController::class, 'changePassword']);
-        
+
         // Orders
         Route::get('/orders', [SecurityOrderController::class, 'index']);
         Route::get('/orders/history', [SecurityOrderController::class, 'history']);
         Route::get('/orders/{id}', [SecurityOrderController::class, 'show']);
-        
+
         // Status updates
         Route::post('/orders/{id}/en-route', [SecurityStatusController::class, 'enRoute']);
         Route::post('/orders/{id}/arrived', [SecurityStatusController::class, 'arrived']);
         Route::post('/orders/{id}/complete', [SecurityStatusController::class, 'complete']);
-        Route::post('/location/update', [SecurityStatusController::class, 'updateLocation']);
-        
+        Route::post('/location/update', [SecurityStatusController::class, 'updateLocation'])
+            ->middleware('throttle:120,1');
+
         // Chat
         Route::get('/orders/{id}/messages', [SecurityChatController::class, 'getMessages']);
         Route::post('/orders/{id}/messages', [SecurityChatController::class, 'sendMessage']);
@@ -120,24 +123,25 @@ Route::prefix('admin')->group(function () {
     // Authentication
     Route::post('/login', [AdminAuthController::class, 'login']);
     Route::get('/vehicles', [AdminVehicleController::class, 'index']);
-    
+
     // Protected routes
     Route::middleware(['auth:sanctum', 'actor:admin,admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
-        
+
         // Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
         Route::get('/reports/summary', [AdminReportController::class, 'summary']);
-        
+
         // Bookings
         Route::get('/bookings', [AdminBookingController::class, 'index']);
         Route::get('/bookings/active', [AdminBookingController::class, 'active']);
+        Route::get('/bookings/{id}/messages', [AdminBookingChatController::class, 'index']);
         Route::get('/bookings/{id}', [AdminBookingController::class, 'show']);
         Route::post('/bookings/{id}/assign-team', [AdminBookingController::class, 'assignTeam']);
         Route::post('/bookings/{id}/complete', [AdminBookingController::class, 'complete']);
         Route::put('/bookings/{id}', [AdminBookingController::class, 'update']);
-        
+
         // Teams
         Route::get('/teams', [AdminTeamController::class, 'index']);
         Route::post('/teams', [AdminTeamController::class, 'store']);
@@ -147,20 +151,27 @@ Route::prefix('admin')->group(function () {
         Route::get('/security-personnel', [AdminSecurityPersonnelController::class, 'index']);
         Route::post('/security-personnel', [AdminSecurityPersonnelController::class, 'store']);
         Route::put('/security-personnel/{id}', [AdminSecurityPersonnelController::class, 'update']);
-        
+
         // Clients
         Route::get('/clients', [AdminClientController::class, 'index']);
         Route::get('/clients/{id}', [AdminClientController::class, 'show']);
         Route::post('/clients/{id}/verify', [AdminClientController::class, 'updateVerification']);
-        
+
         // Vehicles
         Route::post('/vehicles', [AdminVehicleController::class, 'store']);
-        
+        Route::put('/vehicles/{id}', [AdminVehicleController::class, 'update']);
+        Route::delete('/vehicles/{id}', [AdminVehicleController::class, 'destroy']);
+
         // Monitoring
         Route::get('/monitoring/live', [AdminMonitoringController::class, 'liveTracking']);
-        
+
         // Payments
         Route::get('/payments', [AdminPaymentController::class, 'index']);
+
+        // Guarding service catalog (hourly/daily GEL, icons, vehicle rules)
+        Route::get('/services', [AdminServiceController::class, 'index']);
+        Route::post('/services', [AdminServiceController::class, 'store']);
+        Route::put('/services/{id}', [AdminServiceController::class, 'update']);
     });
 });
 

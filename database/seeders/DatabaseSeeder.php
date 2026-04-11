@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SecurityTeamSeeder::class,
             SecurityPersonnelSeeder::class,
             VehicleSeeder::class,
+            ServiceSeeder::class,
             DemoClientBookingSeeder::class,
         ]);
     }

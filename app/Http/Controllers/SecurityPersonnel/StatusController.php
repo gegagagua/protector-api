@@ -13,34 +13,32 @@ use OpenApi\Attributes as OA;
 
 class StatusController extends Controller
 {
-    public function __construct(private readonly BookingStateMachine $stateMachine)
-    {
-    }
+    public function __construct(private readonly BookingStateMachine $stateMachine) {}
 
     #[OA\Post(
-        path: "/api/security/orders/{id}/en-route",
-        summary: "Mark order as en route",
-        description: "Transitions booking to ongoing state and starts live location tracking.",
-        tags: ["Security Personnel Status"],
-        security: [["sanctum" => []]],
+        path: '/api/security/orders/{id}/en-route',
+        summary: 'Mark order as en route',
+        description: 'Transitions booking to ongoing state and starts live location tracking.',
+        tags: ['Security Personnel Status'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "latitude", type: "number", description: "Current latitude of security personnel", example: 41.7151),
-                    new OA\Property(property: "longitude", type: "number", description: "Current longitude of security personnel", example: 44.8271)
+                    new OA\Property(property: 'latitude', type: 'number', description: 'Current latitude of security personnel', example: 41.7151),
+                    new OA\Property(property: 'longitude', type: 'number', description: 'Current longitude of security personnel', example: 44.8271),
                 ]
             )
         ),
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Status updated")]
+        responses: [new OA\Response(response: 200, description: 'Status updated')]
     )]
     public function enRoute(Request $request, $id): JsonResponse
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
-        if (!$team) {
+        if (! $team) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Security personnel is not assigned to a team.',
@@ -73,35 +71,36 @@ class StatusController extends Controller
             'status' => 'success',
             'message' => 'Status updated to en route',
             'booking' => $booking->fresh(),
+            'location' => $location->toMapArray(),
         ]);
     }
 
     #[OA\Post(
-        path: "/api/security/orders/{id}/arrived",
-        summary: "Mark order as arrived",
-        description: "Transitions booking to arrived state and records latest team location.",
-        tags: ["Security Personnel Status"],
-        security: [["sanctum" => []]],
+        path: '/api/security/orders/{id}/arrived',
+        summary: 'Mark order as arrived',
+        description: 'Transitions booking to arrived state and records latest team location.',
+        tags: ['Security Personnel Status'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["latitude", "longitude"],
+                required: ['latitude', 'longitude'],
                 properties: [
-                    new OA\Property(property: "latitude", type: "number", description: "Arrival latitude", example: 41.7151),
-                    new OA\Property(property: "longitude", type: "number", description: "Arrival longitude", example: 44.8271)
+                    new OA\Property(property: 'latitude', type: 'number', description: 'Arrival latitude', example: 41.7151),
+                    new OA\Property(property: 'longitude', type: 'number', description: 'Arrival longitude', example: 44.8271),
                 ]
             )
         ),
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Status updated")]
+        responses: [new OA\Response(response: 200, description: 'Status updated')]
     )]
     public function arrived(Request $request, $id): JsonResponse
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
-        if (!$team) {
+        if (! $team) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Security personnel is not assigned to a team.',
@@ -131,25 +130,26 @@ class StatusController extends Controller
             'status' => 'success',
             'message' => 'Status updated to arrived',
             'booking' => $booking->fresh(),
+            'location' => $location->toMapArray(),
         ]);
     }
 
     #[OA\Post(
-        path: "/api/security/orders/{id}/complete",
-        summary: "Mark order as completed",
-        description: "Transitions arrived booking to completed and frees team/personnel availability.",
-        tags: ["Security Personnel Status"],
-        security: [["sanctum" => []]],
+        path: '/api/security/orders/{id}/complete',
+        summary: 'Mark order as completed',
+        description: 'Transitions arrived booking to completed and frees team/personnel availability.',
+        tags: ['Security Personnel Status'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Booking completed")]
+        responses: [new OA\Response(response: 200, description: 'Booking completed')]
     )]
     public function complete(Request $request, $id): JsonResponse
     {
         $personnel = $request->user();
         $team = $personnel->securityTeam;
-        if (!$team) {
+        if (! $team) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Security personnel is not assigned to a team.',
@@ -170,33 +170,33 @@ class StatusController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/security/location/update",
-        summary: "Update location tracking",
-        description: "Pushes periodic location updates for active booking tracking.",
-        tags: ["Security Personnel Status"],
-        security: [["sanctum" => []]],
+        path: '/api/security/location/update',
+        summary: 'Update location tracking',
+        description: 'Pushes periodic location updates for active booking tracking.',
+        tags: ['Security Personnel Status'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["booking_id", "latitude", "longitude"],
+                required: ['booking_id', 'latitude', 'longitude'],
                 properties: [
-                    new OA\Property(property: "booking_id", type: "integer", description: "Booking being tracked", example: 10),
-                    new OA\Property(property: "latitude", type: "number", description: "Current latitude", example: 41.7151),
-                    new OA\Property(property: "longitude", type: "number", description: "Current longitude", example: 44.8271),
-                    new OA\Property(property: "accuracy", type: "number", description: "GPS accuracy in meters", nullable: true, example: 5.2),
-                    new OA\Property(property: "speed", type: "number", description: "Speed in m/s", nullable: true, example: 11.4),
-                    new OA\Property(property: "heading", type: "number", description: "Heading in degrees (0-360)", nullable: true, example: 180)
+                    new OA\Property(property: 'booking_id', type: 'integer', description: 'Booking being tracked', example: 10),
+                    new OA\Property(property: 'latitude', type: 'number', description: 'Current latitude', example: 41.7151),
+                    new OA\Property(property: 'longitude', type: 'number', description: 'Current longitude', example: 44.8271),
+                    new OA\Property(property: 'accuracy', type: 'number', description: 'GPS accuracy in meters', nullable: true, example: 5.2),
+                    new OA\Property(property: 'speed', type: 'number', description: 'Speed in m/s', nullable: true, example: 11.4),
+                    new OA\Property(property: 'heading', type: 'number', description: 'Heading in degrees (0-360)', nullable: true, example: 180),
                 ]
             )
         ),
-        responses: [new OA\Response(response: 200, description: "Location updated")]
+        responses: [new OA\Response(response: 200, description: 'Location updated with map-ready coordinates')]
     )]
     public function updateLocation(Request $request): JsonResponse
     {
         $personnel = $request->user();
 
         $validated = $request->validate([
-            'booking_id' => 'required|exists:bookings,id',
+            'booking_id' => 'required|integer|exists:bookings,id',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'accuracy' => 'nullable|numeric|min:0',
@@ -206,11 +206,18 @@ class StatusController extends Controller
 
         $booking = Booking::findOrFail($validated['booking_id']);
 
-        if (!$personnel->securityTeam || $booking->security_team_id !== $personnel->securityTeam->id) {
+        if (! $personnel->securityTeam || (int) $booking->security_team_id !== (int) $personnel->securityTeam->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized',
             ], 403);
+        }
+
+        if (! in_array($booking->status, ['confirmed', 'ongoing', 'arrived'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Location updates are only accepted for confirmed, ongoing, or arrived bookings.',
+            ], 422);
         }
 
         $location = LocationTracking::create([
@@ -228,6 +235,7 @@ class StatusController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Location updated',
+            'location' => $location->fresh()->toMapArray(),
         ]);
     }
 }

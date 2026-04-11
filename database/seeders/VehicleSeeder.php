@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\VehicleRole;
 use App\Models\Vehicle;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +22,7 @@ class VehicleSeeder extends Seeder
                 'color' => 'Black',
                 'year' => 2021,
                 'vehicle_type' => 'sedan',
+                'role' => VehicleRole::LuxurySedan,
                 'status' => 'available',
                 'description' => 'Executive sedan for urban escort.',
                 'is_active' => true,
@@ -33,6 +35,7 @@ class VehicleSeeder extends Seeder
                 'color' => 'Black',
                 'year' => 2022,
                 'vehicle_type' => 'suv',
+                'role' => VehicleRole::ArmoredSuv,
                 'status' => 'available',
                 'description' => 'Armored-ready SUV for VIP transport.',
                 'is_active' => true,
@@ -45,6 +48,7 @@ class VehicleSeeder extends Seeder
                 'color' => 'Gray',
                 'year' => 2020,
                 'vehicle_type' => 'van',
+                'role' => VehicleRole::LuxuryVan,
                 'status' => 'in_use',
                 'description' => 'Team transport van for multi-person missions.',
                 'is_active' => true,
@@ -57,6 +61,7 @@ class VehicleSeeder extends Seeder
                 'color' => 'White',
                 'year' => 2023,
                 'vehicle_type' => 'motorcycle',
+                'role' => VehicleRole::Utility,
                 'status' => 'available',
                 'description' => 'Rapid response motorcycle unit.',
                 'is_active' => true,

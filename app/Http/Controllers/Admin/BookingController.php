@@ -15,17 +15,15 @@ class BookingController extends Controller
     /** @var list<string> */
     private const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed', 'ongoing', 'arrived'];
 
-    public function __construct(private readonly BookingStateMachine $stateMachine)
-    {
-    }
+    public function __construct(private readonly BookingStateMachine $stateMachine) {}
 
     #[OA\Get(
-        path: "/api/admin/bookings/active",
-        summary: "Get active bookings",
-        description: "Returns all non-terminal bookings (pending, confirmed, ongoing, arrived) with full booking payload, assigned security team including personnel, client, vehicle, protected persons, recent messages, payments, and rating when present.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
-        responses: [new OA\Response(response: 200, description: "Active bookings with team and relations")]
+        path: '/api/admin/bookings/active',
+        summary: 'Get active bookings',
+        description: 'Returns all non-terminal bookings (pending, confirmed, ongoing, arrived) with full booking payload, assigned security team including personnel, client, vehicle, protected persons, recent messages, payments, and rating when present.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
+        responses: [new OA\Response(response: 200, description: 'Active bookings with team and relations')]
     )]
     public function active(): JsonResponse
     {
@@ -35,6 +33,7 @@ class BookingController extends Controller
                 'client',
                 'securityTeam.personnel',
                 'vehicle',
+                'service',
                 'bookingPersons',
                 'messages' => fn ($q) => $q->latest('created_at')->limit(100),
                 'payments',
@@ -50,18 +49,18 @@ class BookingController extends Controller
     }
 
     #[OA\Get(
-        path: "/api/admin/bookings",
-        summary: "Get all bookings",
-        description: "Returns paginated bookings list for admin operations with optional status filter.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
-        responses: [new OA\Response(response: 200, description: "Bookings list")]
+        path: '/api/admin/bookings',
+        summary: 'Get all bookings',
+        description: 'Returns paginated bookings list for admin operations with optional status filter.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
+        responses: [new OA\Response(response: 200, description: 'Bookings list')]
     )]
     public function index(Request $request): JsonResponse
     {
         $status = $request->query('status');
-        
-        $query = Booking::with(['client', 'securityTeam', 'vehicle']);
+
+        $query = Booking::with(['client', 'securityTeam', 'vehicle', 'service']);
 
         if ($status) {
             $query->where('status', $status);
@@ -76,19 +75,19 @@ class BookingController extends Controller
     }
 
     #[OA\Get(
-        path: "/api/admin/bookings/{id}",
-        summary: "Get booking details",
-        description: "Returns full booking details for admin review and management.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/bookings/{id}',
+        summary: 'Get booking details',
+        description: 'Returns full booking details for admin review and management.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Booking details")]
+        responses: [new OA\Response(response: 200, description: 'Booking details')]
     )]
     public function show($id): JsonResponse
     {
-        $booking = Booking::with(['client', 'securityTeam.personnel', 'vehicle', 'bookingPersons', 'messages', 'payments', 'rating'])
+        $booking = Booking::with(['client', 'securityTeam.personnel', 'vehicle', 'service', 'bookingPersons', 'messages', 'payments', 'rating'])
             ->findOrFail($id);
 
         return response()->json([
@@ -98,24 +97,24 @@ class BookingController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/admin/bookings/{id}/assign-team",
-        summary: "Assign security team to booking",
-        description: "Assigns an available team to pending booking and transitions status to confirmed.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/bookings/{id}/assign-team',
+        summary: 'Assign security team to booking',
+        description: 'Assigns an available team to pending booking and transitions status to confirmed.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["security_team_id"],
+                required: ['security_team_id'],
                 properties: [
-                    new OA\Property(property: "security_team_id", type: "integer", description: "ID of available security team to assign", example: 3)
+                    new OA\Property(property: 'security_team_id', type: 'integer', description: 'ID of available security team to assign', example: 3),
                 ]
             )
         ),
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Team assigned")]
+        responses: [new OA\Response(response: 200, description: 'Team assigned')]
     )]
     public function assignTeam(Request $request, $id): JsonResponse
     {
@@ -151,26 +150,26 @@ class BookingController extends Controller
     }
 
     #[OA\Put(
-        path: "/api/admin/bookings/{id}",
-        summary: "Update booking",
-        description: "Updates editable booking attributes such as start time, duration, team, and notes.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/bookings/{id}',
+        summary: 'Update booking',
+        description: 'Updates editable booking attributes such as start time, duration, team, and notes.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: false,
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "start_time", type: "string", format: "date-time", description: "Updated booking start date/time", example: "2026-03-10T12:00:00Z"),
-                    new OA\Property(property: "duration_hours", type: "integer", description: "Updated duration in hours", example: 4),
-                    new OA\Property(property: "security_team_id", type: "integer", description: "Reassign booking to another team", example: 2),
-                    new OA\Property(property: "admin_notes", type: "string", description: "Internal admin notes", example: "Client requested earlier arrival")
+                    new OA\Property(property: 'start_time', type: 'string', format: 'date-time', description: 'Updated booking start date/time', example: '2026-03-10T12:00:00Z'),
+                    new OA\Property(property: 'duration_hours', type: 'integer', description: 'Updated duration in hours', example: 4),
+                    new OA\Property(property: 'security_team_id', type: 'integer', description: 'Reassign booking to another team', example: 2),
+                    new OA\Property(property: 'admin_notes', type: 'string', description: 'Internal admin notes', example: 'Client requested earlier arrival'),
                 ]
             )
         ),
-        responses: [new OA\Response(response: 200, description: "Booking updated")]
+        responses: [new OA\Response(response: 200, description: 'Booking updated')]
     )]
     public function update(Request $request, $id): JsonResponse
     {
@@ -193,15 +192,15 @@ class BookingController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/admin/bookings/{id}/complete",
-        summary: "Complete booking by admin",
-        description: "Completes booking from admin side and releases assigned team availability.",
-        tags: ["Admin Bookings"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/bookings/{id}/complete',
+        summary: 'Complete booking by admin',
+        description: 'Completes booking from admin side and releases assigned team availability.',
+        tags: ['Admin Bookings'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Booking ID", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: 'id', description: 'Booking ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Booking completed")]
+        responses: [new OA\Response(response: 200, description: 'Booking completed')]
     )]
     public function complete($id): JsonResponse
     {

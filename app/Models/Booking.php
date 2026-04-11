@@ -14,6 +14,7 @@ class Booking extends Model
         'client_id',
         'security_team_id',
         'vehicle_id',
+        'service_id',
         'service_type',
         'security_personnel_count',
         'persons_to_protect_count',
@@ -70,6 +71,11 @@ class Booking extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function bookingPersons()

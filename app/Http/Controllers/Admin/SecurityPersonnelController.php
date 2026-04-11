@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SecurityPersonnelRole;
 use App\Http\Controllers\Controller;
 use App\Models\SecurityPersonnel;
 use App\Models\SecurityTeam;
@@ -13,15 +14,15 @@ use OpenApi\Attributes as OA;
 class SecurityPersonnelController extends Controller
 {
     #[OA\Get(
-        path: "/api/admin/security-personnel",
-        summary: "List security personnel",
-        description: "Returns paginated security staff with optional filter by team.",
-        tags: ["Admin Security Personnel"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/security-personnel',
+        summary: 'List security personnel',
+        description: 'Returns paginated security staff with optional filter by team.',
+        tags: ['Admin Security Personnel'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "team_id", description: "Filter by security_team_id", in: "query", required: false, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: 'team_id', description: 'Filter by security_team_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         ],
-        responses: [new OA\Response(response: 200, description: "Personnel list")]
+        responses: [new OA\Response(response: 200, description: 'Personnel list')]
     )]
     public function index(Request $request): JsonResponse
     {
@@ -40,31 +41,38 @@ class SecurityPersonnelController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/admin/security-personnel",
-        summary: "Create security personnel",
-        description: "Creates a new security account (login). Password is stored hashed. Default status is offline unless specified.",
-        tags: ["Admin Security Personnel"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/security-personnel',
+        summary: 'Create security personnel',
+        description: 'Creates a new security account (login). Password is stored hashed. Default status is offline unless specified.',
+        tags: ['Admin Security Personnel'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["first_name", "last_name", "username", "phone", "password"],
+                required: ['first_name', 'last_name', 'username', 'phone', 'password', 'role'],
                 properties: [
-                    new OA\Property(property: "first_name", type: "string", example: "Giorgi"),
-                    new OA\Property(property: "last_name", type: "string", example: "Maisuradze"),
-                    new OA\Property(property: "username", type: "string", example: "guard_new"),
-                    new OA\Property(property: "phone", type: "string", example: "+995555770099"),
-                    new OA\Property(property: "email", type: "string", format: "email", nullable: true, example: "guard@proector.local"),
-                    new OA\Property(property: "password", type: "string", format: "password", example: "SecurePass1"),
-                    new OA\Property(property: "security_team_id", type: "integer", nullable: true, description: "Assign to team (optional)", example: 1),
-                    new OA\Property(property: "status", type: "string", enum: ["available", "busy", "offline"], nullable: true, example: "offline"),
-                    new OA\Property(property: "is_active", type: "boolean", nullable: true, example: true),
+                    new OA\Property(property: 'first_name', type: 'string', example: 'Giorgi'),
+                    new OA\Property(property: 'last_name', type: 'string', example: 'Maisuradze'),
+                    new OA\Property(property: 'username', type: 'string', example: 'guard_new'),
+                    new OA\Property(property: 'phone', type: 'string', example: '+995555770099'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true, example: 'guard@proector.local'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'SecurePass1'),
+                    new OA\Property(
+                        property: 'role',
+                        type: 'string',
+                        enum: ['armed_guard', 'unarmed_guard', 'driver', 'heavy_armed_guard'],
+                        example: 'driver',
+                        description: 'Security person guard role',
+                    ),
+                    new OA\Property(property: 'security_team_id', type: 'integer', nullable: true, description: 'Assign to team (optional)', example: 1),
+                    new OA\Property(property: 'status', type: 'string', enum: ['available', 'busy', 'offline'], nullable: true, example: 'offline'),
+                    new OA\Property(property: 'is_active', type: 'boolean', nullable: true, example: true),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: "Personnel created"),
-            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 201, description: 'Personnel created'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function store(Request $request): JsonResponse
@@ -79,34 +87,40 @@ class SecurityPersonnelController extends Controller
     }
 
     #[OA\Post(
-        path: "/api/admin/teams/{team}/personnel",
-        summary: "Add security personnel to a team",
-        description: "Creates a new security account and assigns it to the given team. Body is the same as POST /security-personnel except security_team_id must not be sent (it is taken from the URL).",
-        tags: ["Admin Teams", "Admin Security Personnel"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/teams/{team}/personnel',
+        summary: 'Add security personnel to a team',
+        description: 'Creates a new security account and assigns it to the given team. Body is the same as POST /security-personnel except security_team_id must not be sent (it is taken from the URL).',
+        tags: ['Admin Teams', 'Admin Security Personnel'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "team", description: "Security team ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: 'team', description: 'Security team ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["first_name", "last_name", "username", "phone", "password"],
+                required: ['first_name', 'last_name', 'username', 'phone', 'password', 'role'],
                 properties: [
-                    new OA\Property(property: "first_name", type: "string", example: "Giorgi"),
-                    new OA\Property(property: "last_name", type: "string", example: "Maisuradze"),
-                    new OA\Property(property: "username", type: "string", example: "guard_alpha_2"),
-                    new OA\Property(property: "phone", type: "string", example: "+995555770088"),
-                    new OA\Property(property: "email", type: "string", format: "email", nullable: true),
-                    new OA\Property(property: "password", type: "string", format: "password", example: "SecurePass1"),
-                    new OA\Property(property: "status", type: "string", enum: ["available", "busy", "offline"], nullable: true),
-                    new OA\Property(property: "is_active", type: "boolean", nullable: true),
+                    new OA\Property(property: 'first_name', type: 'string', example: 'Giorgi'),
+                    new OA\Property(property: 'last_name', type: 'string', example: 'Maisuradze'),
+                    new OA\Property(property: 'username', type: 'string', example: 'guard_alpha_2'),
+                    new OA\Property(property: 'phone', type: 'string', example: '+995555770088'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'SecurePass1'),
+                    new OA\Property(
+                        property: 'role',
+                        type: 'string',
+                        enum: ['armed_guard', 'unarmed_guard', 'driver', 'heavy_armed_guard'],
+                        example: 'armed_guard',
+                    ),
+                    new OA\Property(property: 'status', type: 'string', enum: ['available', 'busy', 'offline'], nullable: true),
+                    new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: "Personnel created and linked to team"),
-            new OA\Response(response: 404, description: "Team not found"),
-            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 201, description: 'Personnel created and linked to team'),
+            new OA\Response(response: 404, description: 'Team not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function storeForTeam(Request $request, SecurityTeam $team): JsonResponse
@@ -133,6 +147,7 @@ class SecurityPersonnelController extends Controller
             'phone' => 'required|string|max:50|unique:security_personnel,phone',
             'email' => 'nullable|email|max:255',
             'password' => 'required|string|min:8',
+            'role' => ['required', Rule::enum(SecurityPersonnelRole::class)],
             'status' => 'nullable|in:available,busy,offline',
             'is_active' => 'sometimes|boolean',
         ];
@@ -152,33 +167,38 @@ class SecurityPersonnelController extends Controller
     }
 
     #[OA\Put(
-        path: "/api/admin/security-personnel/{id}",
-        summary: "Update security personnel",
-        description: "Updates profile fields, optional password, team assignment, operational status (available/busy/offline), and is_active.",
-        tags: ["Admin Security Personnel"],
-        security: [["sanctum" => []]],
+        path: '/api/admin/security-personnel/{id}',
+        summary: 'Update security personnel',
+        description: 'Updates profile fields, optional password, team assignment, operational status (available/busy/offline), and is_active.',
+        tags: ['Admin Security Personnel'],
+        security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: "id", description: "Security personnel ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: 'id', description: 'Security personnel ID', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "first_name", type: "string"),
-                    new OA\Property(property: "last_name", type: "string"),
-                    new OA\Property(property: "username", type: "string"),
-                    new OA\Property(property: "phone", type: "string"),
-                    new OA\Property(property: "email", type: "string", format: "email", nullable: true),
-                    new OA\Property(property: "password", type: "string", format: "password", nullable: true, description: "New password (omit to keep current)"),
-                    new OA\Property(property: "security_team_id", type: "integer", nullable: true),
-                    new OA\Property(property: "status", type: "string", enum: ["available", "busy", "offline"]),
-                    new OA\Property(property: "is_active", type: "boolean", description: "Account can log in when true"),
+                    new OA\Property(property: 'first_name', type: 'string'),
+                    new OA\Property(property: 'last_name', type: 'string'),
+                    new OA\Property(property: 'username', type: 'string'),
+                    new OA\Property(property: 'phone', type: 'string'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', nullable: true, description: 'New password (omit to keep current)'),
+                    new OA\Property(property: 'security_team_id', type: 'integer', nullable: true),
+                    new OA\Property(
+                        property: 'role',
+                        type: 'string',
+                        enum: ['armed_guard', 'unarmed_guard', 'driver', 'heavy_armed_guard'],
+                    ),
+                    new OA\Property(property: 'status', type: 'string', enum: ['available', 'busy', 'offline']),
+                    new OA\Property(property: 'is_active', type: 'boolean', description: 'Account can log in when true'),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: "Personnel updated"),
-            new OA\Response(response: 404, description: "Not found"),
-            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 200, description: 'Personnel updated'),
+            new OA\Response(response: 404, description: 'Not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function update(Request $request, $id): JsonResponse
@@ -193,6 +213,7 @@ class SecurityPersonnelController extends Controller
             'email' => 'nullable|email|max:255',
             'password' => 'sometimes|nullable|string|min:8',
             'security_team_id' => 'nullable|exists:security_teams,id',
+            'role' => ['sometimes', Rule::enum(SecurityPersonnelRole::class)],
             'status' => 'sometimes|in:available,busy,offline',
             'is_active' => 'sometimes|boolean',
         ]);

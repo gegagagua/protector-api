@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SecurityPersonnelRole;
 use App\Models\Admin;
 use App\Models\Client;
 use App\Models\SecurityPersonnel;
@@ -24,7 +25,7 @@ class RoleIsolationTest extends TestCase
 
         $token = $client->createToken('client-auth', ['client'])->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/admin/dashboard');
 
         $response->assertStatus(403);
@@ -43,7 +44,7 @@ class RoleIsolationTest extends TestCase
 
         $token = $admin->createToken('admin-auth', ['admin'])->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/client/profile');
 
         $response->assertStatus(403);
@@ -57,13 +58,14 @@ class RoleIsolationTest extends TestCase
             'username' => 'guard01',
             'phone' => '+995500000099',
             'password' => 'password123',
+            'role' => SecurityPersonnelRole::Driver,
             'status' => 'available',
             'is_active' => true,
         ]);
 
         $token = $security->createToken('security-auth', ['security'])->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/admin/payments');
 
         $response->assertStatus(403);

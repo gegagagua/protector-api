@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VehicleRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,7 +11,7 @@ class Vehicle extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $appends = ['title'];
+    protected $appends = ['title', 'role_label'];
 
     protected $fillable = [
         'make',
@@ -20,6 +21,7 @@ class Vehicle extends Model
         'color',
         'year',
         'vehicle_type',
+        'role',
         'status',
         'description',
         'is_active',
@@ -28,6 +30,7 @@ class Vehicle extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'year' => 'integer',
+        'role' => VehicleRole::class,
     ];
 
     // Relationships
@@ -49,6 +52,11 @@ class Vehicle extends Model
 
     public function getTitleAttribute(): string
     {
-        return trim(($this->make ?? '') . ' ' . ($this->model ?? ''));
+        return trim(($this->make ?? '').' '.($this->model ?? ''));
+    }
+
+    public function getRoleLabelAttribute(): ?string
+    {
+        return $this->role?->label();
     }
 }

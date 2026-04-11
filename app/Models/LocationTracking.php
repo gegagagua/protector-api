@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MapLinks;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -57,5 +58,29 @@ class LocationTracking extends Model
     public function scopeRecent($query, $minutes = 5)
     {
         return $query->where('tracked_at', '>=', now()->subMinutes($minutes));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toMapArray(): array
+    {
+        $lat = (float) $this->latitude;
+        $lng = (float) $this->longitude;
+
+        return [
+            'id' => $this->id,
+            'booking_id' => $this->booking_id,
+            'security_personnel_id' => $this->security_personnel_id,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'lat' => $lat,
+            'lng' => $lng,
+            'google_maps_url' => MapLinks::googleMapsSearchUrl($lat, $lng),
+            'accuracy' => $this->accuracy !== null ? (float) $this->accuracy : null,
+            'speed' => $this->speed !== null ? (float) $this->speed : null,
+            'heading' => $this->heading !== null ? (float) $this->heading : null,
+            'tracked_at' => $this->tracked_at?->toIso8601String(),
+        ];
     }
 }

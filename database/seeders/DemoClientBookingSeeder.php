@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Client;
 use App\Models\Payment;
 use App\Models\SecurityTeam;
+use App\Models\Service;
 use App\Models\Vehicle;
 use Illuminate\Database\Seeder;
 
@@ -28,8 +29,10 @@ class DemoClientBookingSeeder extends Seeder
 
         $team = SecurityTeam::query()->first();
         $vehicle = Vehicle::query()->first();
+        $armedService = Service::query()->where('slug', 'armed')->first();
+        $unarmedService = Service::query()->where('slug', 'unarmed')->first();
 
-        if (!$team || !$vehicle) {
+        if (! $team || ! $vehicle || ! $armedService || ! $unarmedService) {
             return;
         }
 
@@ -38,6 +41,7 @@ class DemoClientBookingSeeder extends Seeder
             [
                 'security_team_id' => $team->id,
                 'vehicle_id' => $vehicle->id,
+                'service_id' => $armedService->id,
                 'service_type' => 'armed',
                 'security_personnel_count' => 2,
                 'persons_to_protect_count' => 1,
@@ -62,6 +66,7 @@ class DemoClientBookingSeeder extends Seeder
             [
                 'security_team_id' => $team->id,
                 'vehicle_id' => $vehicle->id,
+                'service_id' => $unarmedService->id,
                 'service_type' => 'unarmed',
                 'security_personnel_count' => 1,
                 'persons_to_protect_count' => 1,
@@ -72,8 +77,8 @@ class DemoClientBookingSeeder extends Seeder
                 'end_time' => now()->subDays(4)->addHours(2),
                 'duration_hours' => 2,
                 'booking_type' => 'scheduled',
-                'total_amount' => 220,
-                'paid_amount' => 220,
+                'total_amount' => 140,
+                'paid_amount' => 140,
                 'payment_status' => 'paid',
                 'status' => 'completed',
                 'completed_at' => now()->subDays(4)->addHours(2),
@@ -85,10 +90,10 @@ class DemoClientBookingSeeder extends Seeder
             ['booking_id' => $historyBooking->id, 'client_id' => $client->id],
             [
                 'payment_method_id' => null,
-                'amount' => 220,
+                'amount' => 140,
                 'payment_type' => 'card',
                 'status' => 'completed',
-                'transaction_id' => 'demo-history-' . $historyBooking->id,
+                'transaction_id' => 'demo-history-'.$historyBooking->id,
                 'payment_gateway' => 'mock',
                 'payment_data' => ['source' => 'seed'],
                 'paid_at' => $historyBooking->completed_at ?? now()->subDays(4),
@@ -102,7 +107,7 @@ class DemoClientBookingSeeder extends Seeder
                 'amount' => 800,
                 'payment_type' => 'card',
                 'status' => 'completed',
-                'transaction_id' => 'demo-active-' . $activeBooking->id,
+                'transaction_id' => 'demo-active-'.$activeBooking->id,
                 'payment_gateway' => 'mock',
                 'payment_data' => ['source' => 'seed'],
                 'paid_at' => now()->subMinutes(35),

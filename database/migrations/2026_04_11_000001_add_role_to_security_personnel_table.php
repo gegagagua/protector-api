@@ -1,0 +1,25 @@
+<?php
+
+use App\Enums\SecurityPersonnelRole;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('security_personnel', function (Blueprint $table) {
+            $table->string('role', 32)
+                ->default(SecurityPersonnelRole::Driver->value)
+                ->after('security_team_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('security_personnel', function (Blueprint $table) {
+            $table->dropColumn('role');
+        });
+    }
+};

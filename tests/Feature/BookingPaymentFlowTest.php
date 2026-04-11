@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\VehicleRole;
 use App\Models\Client;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,12 +27,13 @@ class BookingPaymentFlowTest extends TestCase
             'model' => '300',
             'license_plate' => 'TEST-001',
             'vehicle_type' => 'sedan',
+            'role' => VehicleRole::LuxurySedan,
             'status' => 'available',
             'is_active' => true,
         ]);
 
         $token = $client->createToken('client-auth', ['client'])->plainTextToken;
-        $headers = ['Authorization' => 'Bearer ' . $token];
+        $headers = ['Authorization' => 'Bearer '.$token];
 
         $start = now()->addHours(2);
         $end = $start->copy()->addHours(4);

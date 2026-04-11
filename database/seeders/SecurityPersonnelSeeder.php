@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\SecurityPersonnelRole;
 use App\Models\SecurityPersonnel;
 use App\Models\SecurityTeam;
 use Illuminate\Database\Seeder;
@@ -31,6 +32,7 @@ class SecurityPersonnelSeeder extends Seeder
                 'email' => 'guard1@proector.local',
                 'password' => Hash::make('guard1234'),
                 'security_team_id' => $team->id,
+                'role' => SecurityPersonnelRole::ArmedGuard,
                 'status' => 'available',
                 'is_active' => true,
             ]

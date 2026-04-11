@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\SecurityPersonnelRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class SecurityPersonnel extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $table = 'security_personnel';
 
@@ -23,8 +23,13 @@ class SecurityPersonnel extends Authenticatable
         'email',
         'password',
         'security_team_id',
+        'role',
         'status',
         'is_active',
+    ];
+
+    protected $appends = [
+        'role_label',
     ];
 
     protected $hidden = [
@@ -36,6 +41,7 @@ class SecurityPersonnel extends Authenticatable
     protected $casts = [
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'role' => SecurityPersonnelRole::class,
     ];
 
     // Relationships
@@ -69,5 +75,10 @@ class SecurityPersonnel extends Authenticatable
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getRoleLabelAttribute(): ?string
+    {
+        return $this->role?->label();
     }
 }
